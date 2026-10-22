@@ -48,8 +48,10 @@ The original candidate benchmark is available at [sowide/bankruptcy_dataset](htt
 
 ## Reproducibility and reporting
 
-Default split years, model settings, and seed are in `configs/default.json`. The output includes `metrics.json`, `predictions.csv`, `loss_curve.png`, and `model.pt`. For paper results, run the declared seed set, report confidence intervals and all ablations, and retain the complete output manifests. Do not treat feature-similarity edges as causal links or evidence of contagion.
+Default split years, model settings, and seed are in `configs/default.json`. The output includes `metrics.json`, `predictions.csv`, `loss_curve.png`, and `model.pt`. The runnable comparison suite includes logistic regression, decision tree, random forest, histogram gradient boosting, and MLP controls on both current-year and flattened five-year features, as well as LSTM, GCN, GraphSAGE, and the reliability-aware temporal GNN. Conventional graph baselines omit persistence weighting to isolate the proposed mechanism.
+
+The paper's hard success criterion is to beat the strongest traditional and neural/graph baselines on held-out PR-AUC and ROC-AUC with paired company-clustered confidence intervals above zero, consistent gains across seeds and future windows, and no failure of the operating-point or calibration guardrails. A negative or mixed result does not count as success under this project's criterion. See [`docs/comparison-framework.md`](docs/comparison-framework.md) for exact rules, rationale, controls, and current limitations. Do not treat feature-similarity edges as causal links or evidence of contagion.
 
 ## Paper
 
-See `paper/paper.md` for the claim-safe manuscript scaffold and `experiment-plan.md` for the planned comparisons. The workshop venue remains unselected. All results sections are intentionally marked pending until experiments run on a valid, documented event-horizon dataset.
+See `paper/paper.md` for the claim-safe manuscript scaffold, `experiment-plan.md` for the study plan, and `docs/comparison-framework.md` for the baseline matrix and non-negotiable pass/fail criterion. The workshop venue remains unselected. All results sections are intentionally marked pending until experiments run on a valid, documented event-horizon dataset.

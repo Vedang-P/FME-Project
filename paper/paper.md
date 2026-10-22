@@ -21,7 +21,11 @@ For each firm and prediction year, an LSTM encodes the preceding five fiscal yea
 
 ## 4. Evaluation protocol
 
-Use chronological train, validation, and test periods, plus a company-disjoint generalization analysis. Fit every transformation on training data only. Select checkpoints, calibration, and operating thresholds using validation data. Report PR-AUC as primary; also report ROC-AUC, recall at the selected operating point, Brier score, confusion matrices, confidence intervals, and repeated-seed results. Compare against logistic regression, tree ensembles, MLP, LSTM, GCN, GraphSAGE, and static-graph variants. Ablate temporal history, relation channels, persistence weighting, and message passing; stress-test edge corruption and graph density.
+Use chronological train, validation, and test periods, plus a company-disjoint generalization analysis. Fit every transformation on training data only. Select checkpoints, calibration, and operating thresholds using validation data. The rationale is that distress may be better characterized by multiyear changes and that financially similar peers may provide context; persistence weighting is intended to reduce reliance on transient links. These are hypotheses, not established benefits.
+
+Compare regularized logistic regression, decision tree, random forest, and histogram gradient boosting on current-year features and flattened five-year histories; compare MLP on both views; and include LSTM, unweighted-for-persistence GCN/GraphSAGE, and static or industry graph variants when supported by the licensed fields. Report PR-AUC and ROC-AUC, precision at a validation-selected 80%-recall operating point, Brier score, calibration, and confusion matrices. Use paired company-clustered confidence intervals and repeated-seed results. Ablate temporal history, relation channels, persistence weighting, and message passing; stress-test edge corruption and graph density.
+
+The project defines success in advance: the proposed method must outperform both the strongest traditional baseline and the strongest neural/graph baseline on held-out PR-AUC and ROC-AUC, with paired company-clustered 95% confidence intervals above zero, consistent direction across declared seeds and evaluable future windows, and no failure of operating-point or calibration guardrails. If this gate fails, the method has not met the project's success criterion; the gate will not be relaxed after seeing test results. See `docs/comparison-framework.md` for the complete protocol.
 
 ## 5. Results and limitations
 

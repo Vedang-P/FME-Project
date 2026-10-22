@@ -19,6 +19,7 @@ import torch
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.class_weight import compute_sample_weight
 
 ROOT = Path(__file__).resolve().parent
@@ -157,73 +158,86 @@ def filter_graphs(graphs, relations):
     return {year: SnapshotGraph({name: graph.relations[name] for name in relations if name in graph.relations}, graph.node_ids) for year, graph in graphs.items()}
 
 
-def _run_tabular_baselines(frame, scaled, row_by_year, train_years, val_years, test_years, recall_target, seed, device, epochs):
+def _run_tabular_baselines(frame, scaled, sequences, row_by_year, train_years, val_years, test_years, recall_target, seed, device, epochs):
     year_values = frame.fiscal_year.astype(int).to_numpy()
     train_ids = np.flatnonzero(np.isin(year_values, train_years))
     val_ids = np.flatnonzero(np.isin(year_values, val_years))
     test_ids = np.flatnonzero(np.isin(year_values, test_years))
     y = frame.label.to_numpy(dtype=int)
-    models = {
-        "logistic_regression": LogisticRegression(max_iter=1000, class_weight="balanced", random_state=seed),
-        "random_forest": RandomForestClassifier(n_estimators=200, min_samples_leaf=2, class_weight="balanced_subsample", n_jobs=-1, random_state=seed),
-        "hist_gradient_boosting": HistGradientBoostingClassifier(max_iter=150, learning_rate=0.08, l2_regularization=1.0, random_state=seed),
+    feature_views = {
+        "last_year": scaled,
+        "flattened_history": sequences.reshape(len(sequences), -1),
+    }
+    model_factories = {
+        "logistic_regression": lambda: LogisticRegression(max_iter=1000, class_weight="balanced", random_state=seed),
+        "decision_tree": lambda: DecisionTreeClassifier(max_depth=6, min_samples_leaf=5, class_weight="balanced", random_state=seed),
+        "random_forest": lambda: RandomForestClassifier(n_estimators=200, min_samples_leaf=2, class_weight="balanced_subsample", n_jobs=-1, random_state=seed),
+        "hist_gradient_boosting": lambda: HistGradientBoostingClassifier(max_iter=150, learning_rate=0.08, l2_regularization=1.0, random_state=seed),
     }
     results, predictions = {}, {}
-    for name, model in models.items():
-        if name == "hist_gradient_boosting":
-            weights = compute_sample_weight("balanced", y[train_ids])
-            model.fit(scaled[train_ids], y[train_ids], sample_weight=weights)
-        else:
-            model.fit(scaled[train_ids], y[train_ids])
-        val_score = model.predict_proba(scaled[val_ids])[:, 1]
-        threshold = choose_recall_threshold(y[val_ids], val_score, recall_target)
-        test_score = model.predict_proba(scaled[test_ids])[:, 1]
-        results[name] = binary_metrics(y[test_ids], test_score, threshold)
-        predictions[name] = pd.DataFrame({"row_id": test_ids, "year": year_values[test_ids], "company_id": frame.iloc[test_ids].company_id.to_numpy(), "label": y[test_ids], "score": test_score, "threshold": threshold})
-    mlp = TabularMLP(scaled.shape[1]).to(device)
-    optimizer = torch.optim.AdamW(mlp.parameters(), lr=1e-3, weight_decay=1e-4)
-    pos = max(int(y[train_ids].sum()), 1)
-    neg = max(len(train_ids) - pos, 1)
-    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(neg / pos, dtype=torch.float32, device=device))
-    x_train = torch.as_tensor(scaled[train_ids], dtype=torch.float32, device=device)
-    y_train = torch.as_tensor(y[train_ids], dtype=torch.float32, device=device)
-    rng = np.random.default_rng(seed)
-    best_ap, best_state, stale = -1.0, None, 0
-    for epoch in range(min(epochs, 40)):
-        mlp.train()
-        order = rng.permutation(len(train_ids))
-        losses = []
-        for start in range(0, len(order), 512):
-            batch = torch.as_tensor(order[start : start + 512], dtype=torch.long, device=device)
-            optimizer.zero_grad(set_to_none=True)
-            loss = loss_fn(mlp(x_train[batch]), y_train[batch])
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(mlp.parameters(), 2.0)
-            optimizer.step()
-            losses.append(float(loss.item()))
+    for view_name, matrix in feature_views.items():
+        for model_name, factory in model_factories.items():
+            name = f"{model_name}_{view_name}"
+            model = factory()
+            if model_name == "hist_gradient_boosting":
+                model.fit(matrix[train_ids], y[train_ids], sample_weight=compute_sample_weight("balanced", y[train_ids]))
+            else:
+                model.fit(matrix[train_ids], y[train_ids])
+            val_score = model.predict_proba(matrix[val_ids])[:, 1]
+            threshold = choose_recall_threshold(y[val_ids], val_score, recall_target)
+            test_score = model.predict_proba(matrix[test_ids])[:, 1]
+            results[name] = binary_metrics(y[test_ids], test_score, threshold)
+            validation_metrics = binary_metrics(y[val_ids], val_score, threshold)
+            results[name].update({"validation_pr_auc": validation_metrics["pr_auc"], "validation_roc_auc": validation_metrics["roc_auc"]})
+            predictions[name] = pd.DataFrame({"row_id": test_ids, "year": year_values[test_ids], "company_id": frame.iloc[test_ids].company_id.to_numpy(), "label": y[test_ids], "score": test_score, "threshold": threshold})
+
+        mlp_name = f"mlp_{view_name}"
+        mlp = TabularMLP(matrix.shape[1]).to(device)
+        optimizer = torch.optim.AdamW(mlp.parameters(), lr=1e-3, weight_decay=1e-4)
+        pos = max(int(y[train_ids].sum()), 1)
+        neg = max(len(train_ids) - pos, 1)
+        loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(neg / pos, dtype=torch.float32, device=device))
+        x_train = torch.as_tensor(matrix[train_ids], dtype=torch.float32, device=device)
+        y_train = torch.as_tensor(y[train_ids], dtype=torch.float32, device=device)
+        rng = np.random.default_rng(seed)
+        best_ap, best_state, stale = -1.0, None, 0
+        for epoch in range(min(epochs, 40)):
+            mlp.train()
+            order = rng.permutation(len(train_ids))
+            losses = []
+            for start in range(0, len(order), 512):
+                batch = torch.as_tensor(order[start : start + 512], dtype=torch.long, device=device)
+                optimizer.zero_grad(set_to_none=True)
+                loss = loss_fn(mlp(x_train[batch]), y_train[batch])
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(mlp.parameters(), 2.0)
+                optimizer.step()
+                losses.append(float(loss.item()))
+            mlp.eval()
+            with torch.no_grad():
+                val_tensor = torch.as_tensor(matrix[val_ids], dtype=torch.float32, device=device)
+                val_score = torch.sigmoid(mlp(val_tensor)).cpu().numpy()
+            ap = float(average_precision_score(y[val_ids], val_score)) if len(np.unique(y[val_ids])) == 2 else -1.0
+            print(f"{mlp_name} epoch {epoch + 1}/{min(epochs, 40)} | Loss: {np.mean(losses):.4f} | validation PR-AUC: {ap:.4f}")
+            if ap > best_ap:
+                best_ap = ap
+                best_state = {key: value.detach().cpu().clone() for key, value in mlp.state_dict().items()}
+                stale = 0
+            else:
+                stale += 1
+            if stale >= 5:
+                break
+        if best_state is not None:
+            mlp.load_state_dict(best_state)
         mlp.eval()
         with torch.no_grad():
-            val_tensor = torch.as_tensor(scaled[val_ids], dtype=torch.float32, device=device)
-            val_score = torch.sigmoid(mlp(val_tensor)).cpu().numpy()
-        ap = float(average_precision_score(y[val_ids], val_score)) if len(np.unique(y[val_ids])) == 2 else -1.0
-        print(f"MLP epoch {epoch + 1}/{min(epochs, 40)} | Loss: {np.mean(losses):.4f} | validation PR-AUC: {ap:.4f}")
-        if ap > best_ap:
-            best_ap = ap
-            best_state = {key: value.detach().cpu().clone() for key, value in mlp.state_dict().items()}
-            stale = 0
-        else:
-            stale += 1
-        if stale >= 5:
-            break
-    if best_state is not None:
-        mlp.load_state_dict(best_state)
-    mlp.eval()
-    with torch.no_grad():
-        val_score = torch.sigmoid(mlp(torch.as_tensor(scaled[val_ids], dtype=torch.float32, device=device))).cpu().numpy()
-        test_score = torch.sigmoid(mlp(torch.as_tensor(scaled[test_ids], dtype=torch.float32, device=device))).cpu().numpy()
-    threshold = choose_recall_threshold(y[val_ids], val_score, recall_target)
-    results["mlp"] = binary_metrics(y[test_ids], test_score, threshold)
-    predictions["mlp"] = pd.DataFrame({"row_id": test_ids, "year": year_values[test_ids], "company_id": frame.iloc[test_ids].company_id.to_numpy(), "label": y[test_ids], "score": test_score, "threshold": threshold})
+            val_score = torch.sigmoid(mlp(torch.as_tensor(matrix[val_ids], dtype=torch.float32, device=device))).cpu().numpy()
+            test_score = torch.sigmoid(mlp(torch.as_tensor(matrix[test_ids], dtype=torch.float32, device=device))).cpu().numpy()
+        threshold = choose_recall_threshold(y[val_ids], val_score, recall_target)
+        results[mlp_name] = binary_metrics(y[test_ids], test_score, threshold)
+        validation_metrics = binary_metrics(y[val_ids], val_score, threshold)
+        results[mlp_name].update({"validation_pr_auc": validation_metrics["pr_auc"], "validation_roc_auc": validation_metrics["roc_auc"]})
+        predictions[mlp_name] = pd.DataFrame({"row_id": test_ids, "year": year_values[test_ids], "company_id": frame.iloc[test_ids].company_id.to_numpy(), "label": y[test_ids], "score": test_score, "threshold": threshold})
     return results, predictions
 
 
@@ -311,7 +325,8 @@ def main() -> int:
     seq_rows, histories, companies = build_sequences(frame, scaled, history_length=args.history_length)
     groups = relation_feature_groups(feature_columns)
     graphs, graph_companies = build_snapshot_graphs(frame, scaled, groups, feature_columns, k=args.neighbors, seed=args.seed)
-    if companies != graph_companies:
+    conventional_graphs, conventional_companies = build_snapshot_graphs(frame, scaled, groups, feature_columns, k=args.neighbors, seed=args.seed, persistence_weighting=False)
+    if companies != graph_companies or companies != conventional_companies:
         raise RuntimeError("Sequence and graph company ordering mismatch.")
     relations = sorted({relation for graph in graphs.values() for relation in graph.relations})
     row_by_year = _year_rows(frame)
@@ -319,7 +334,7 @@ def main() -> int:
     print(f"Device: {device}; feature views: {list(groups)}; graph relations: {relations}")
     print(f"Chronological years: train={train_years}, validation={val_years}, test={test_years}")
 
-    tabular_results, prediction_tables = _run_tabular_baselines(frame, scaled, row_by_year, train_years, val_years, test_years, args.recall_target, args.seed, device, epochs)
+    tabular_results, prediction_tables = _run_tabular_baselines(frame, scaled, seq_rows, row_by_year, train_years, val_years, test_years, args.recall_target, args.seed, device, epochs)
     neural_models = {
         "lstm": TemporalOnly(len(feature_columns), args.hidden_dim),
         "gcn": TemporalGCN(len(feature_columns), args.hidden_dim, mode="gcn"),
@@ -329,18 +344,27 @@ def main() -> int:
     all_results = dict(tabular_results)
     histories_by_model = {}
     best_model_state = None
-    model_specs = [(name, model, graphs) for name, model in neural_models.items()]
+    model_specs = [
+        ("lstm", neural_models["lstm"], conventional_graphs),
+        ("gcn", neural_models["gcn"], conventional_graphs),
+        ("graphsage", neural_models["graphsage"], conventional_graphs),
+        ("reliability_temporal_gnn", neural_models["reliability_temporal_gnn"], graphs),
+    ]
     if args.ablations and not args.smoke_test:
         for removed in relations:
             remaining = [r for r in relations if r != removed]
             if remaining:
                 model_specs.append((f"reliability_without_{removed}", ReliabilityTemporalGNN(len(feature_columns), args.hidden_dim, remaining), filter_graphs(graphs, remaining)))
-        no_persistence, _ = build_snapshot_graphs(frame, scaled, groups, feature_columns, k=args.neighbors, seed=args.seed, persistence_weighting=False)
+        no_persistence = conventional_graphs
         model_specs.append(("temporal_gnn_no_persistence", ReliabilityTemporalGNN(len(feature_columns), args.hidden_dim, relations), no_persistence))
     for name, model, model_graphs in model_specs:
         model = model.to(device)
         model, history_log, best_epoch = fit_neural(model, frame, seq_rows, model_graphs, histories, row_by_year, train_years, val_years, epochs, args.patience, args.learning_rate, device, args.history_length, args.seed)
         all_results[name], pred = evaluate_model(model, histories, model_graphs, frame, row_by_year, test_years, device, args.recall_target)
+        validation_y, validation_score, _ = _evaluate_neural(model, histories, model_graphs, frame.label.to_numpy(dtype=int), row_by_year, val_years, device)
+        validation_threshold = choose_recall_threshold(validation_y, validation_score, args.recall_target)
+        validation_metrics = binary_metrics(validation_y, validation_score, validation_threshold)
+        all_results[name].update({"validation_pr_auc": validation_metrics["pr_auc"], "validation_roc_auc": validation_metrics["roc_auc"]})
         prediction_tables[name] = pred
         histories_by_model[name] = history_log
         if name == "reliability_temporal_gnn":
