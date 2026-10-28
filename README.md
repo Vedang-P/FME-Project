@@ -4,6 +4,8 @@ Research software for testing whether reliable, time-varying peer relationships 
 
 The original project synopsis is preserved at [`synopsis.pdf`](synopsis.pdf).
 
+Research website: [fme-research-atlas.vercel.app](https://fme-research-atlas.vercel.app)
+
 ## Research status
 
 The first candidate, the American Stock Market bankruptcy CSV, has a firm-constant label and cannot support next-year forecasting as released; see [`docs/data-audit.md`](docs/data-audit.md). We then audited a public SEC-derived numeric dataset with next-year labels. Its filing dates are absent and 103 company-years contain repeated filings, including one conflicting label group. The local experiment excludes those repeated company-years and uses year-only chronological splits. This permits an exploratory benchmark, but it is **not** a verified filing-time study.

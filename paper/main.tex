@@ -2,6 +2,7 @@
 \IEEEoverridecommandlockouts
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{microtype}
@@ -12,7 +13,7 @@
 \maketitle
 
 \begin{abstract}
-Bankruptcy prediction is difficult because positive cases are rare. This study compares boosted-tree, recurrent, and graph models on a public SEC-derived financial dataset. After excluding 214 repeated company-year filings without reporting dates, the cohort contains 42,742 observations, 34 numeric features, and 293 next-year bankruptcy labels. Models are trained on 2008--2016, selected on 2017--2018, and evaluated on 2019--2021. XGBoost achieves test average precision (AP) 0.1141 and ROC-AUC 0.8868. The reliability-aware temporal GNN achieves AP 0.0383 and ROC-AUC 0.7515. XGBoost with GNN score fusion achieves AP 0.1133 and ROC-AUC 0.8806. A LightGBM--GraphSAGE blend reaches AP 0.1181 but has lower ROC-AUC than LightGBM; its paired AP confidence interval includes zero. A published XGBoost benchmark reports ROC-AUC 0.92 on a different cohort and evaluation protocol. Exact filing-availability dates are unavailable for this dataset, so the results use fiscal-year ordering and do not establish filing-time performance.
+We propose a reliability-aware temporal graph neural network that combines a firm's financial history with changing financial-peer links. We compare it with tabular, recurrent, and graph models on a public SEC-derived dataset using fiscal-year splits. XGBoost performs best among individual models, with average precision (AP) 0.114 and ROC-AUC 0.887. The proposed model scores 0.038 AP and 0.752 ROC-AUC. Fusing it with XGBoost does not improve on the tree model. Missing filing dates limit interpretation to fiscal-year evaluation.
 \end{abstract}
 
 \section{Introduction}
@@ -34,6 +35,13 @@ The source defines its inherited target as bankruptcy in the next fiscal year. E
 \subsection{Chronological Split}
 We train on fiscal years 2008--2016, select models and fusion weights on 2017--2018, and evaluate once on 2019--2021. The test set contains 9,032 rows and 64 positive labels (0.7086\% prevalence). Company identifiers occur in multiple years, so the primary split tests future years for a partially overlapping issuer population; the present report does not claim company-disjoint generalization. No test labels are used for feature transforms, model selection, or threshold selection.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/evaluation_split.pdf}
+\caption{Fiscal-year evaluation windows. The source does not provide exact filing-availability dates, so the split is chronological by fiscal year rather than verified filing time.}
+\label{fig:split}
+\end{figure}
+
 \section{Methods}
 \subsection{Preprocessing and Strong Tabular Baselines}
 Numeric features are converted to finite values, winsorized at the training-set 1st and 99th percentiles, median-imputed, and scaled by the training interquartile range. All transformation parameters are fitted on training years. We compare logistic regression, decision tree, random forest, histogram gradient boosting, MLP, LSTM, GCN, GraphSAGE, reliability-aware temporal GNN, LightGBM, and XGBoost. For each GBDT family we evaluate eight declared configurations on both the most recent-year input and flattened five-year history (16 validation trials), then select by validation AP. LightGBM selects 300 trees, learning rate 0.03, seven leaves, maximum depth four, 20 minimum child samples, and $\ell_2$ penalty 1.0, with balanced class weighting. XGBoost selects depth two, learning rate 0.03, 300 trees, minimum child weight 10, $\ell_2$ penalty 1.0, row and feature subsampling 0.8, and training-set positive-class weighting.
@@ -45,6 +53,13 @@ For firm $i$ in year $t$, an LSTM maps a trailing sequence of up to five annual 
 \end{equation}
 Each relation channel computes a weighted mean of neighboring temporal states. A learned softmax gate combines relation messages, which are fused with the firm's own state and passed to a binary classifier. The GCN and GraphSAGE comparators use the same LSTM states and contemporaneous peer graph, with a single merged message channel. Financial similarity edges are predictive associations; they do not establish contagion or causal links.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/method_overview.pdf}
+\caption{Overview of the proposed reliability-aware temporal GNN. Up to five annual feature vectors are encoded for each firm. Year-specific financial-similarity graphs provide relation messages, with edge reliability adjusted by peer-set persistence before gated aggregation.}
+\label{fig:method}
+\end{figure*}
+
 \subsection{Validation-Selected Score Fusion}
 We transform the tree and graph scores with robust location/scale parameters fitted on validation data, then evaluate convex combinations $q=(1-\alpha)q_{\mathrm{tree}}+\alpha q_{\mathrm{graph}}$ for $\alpha\in\{0,0.1,\ldots,1\}$. We choose the combination with highest validation AP subject to validation ROC-AUC not falling below the tree score. The same validation-only rule selects $\alpha=0.2$ for LightGBM--GraphSAGE, $\alpha=0.1$ for LightGBM--reliability-GNN, and $\alpha=0.1$ for XGBoost--reliability-GNN. XGBoost--GCN and XGBoost--GraphSAGE select $\alpha=0$, so validation does not support adding either message-passing score under this rule.
 
@@ -52,12 +67,26 @@ We transform the tree and graph scores with robust location/scale parameters fit
 AP is the primary metric and ROC-AUC is co-required. We also report Brier score for individual probability models and precision/recall at a threshold chosen on validation to target 80\% recall. Fused standardized scores are rankings, not calibrated probabilities; we do not report Brier scores for them. Paired 95\% confidence intervals compare test predictions by resampling companies with replacement and retaining all test-year rows for each sampled company (2,000 valid replicates). One training seed (42) and one future test window are available, so this interval does not capture seed or period variability.
 
 \section{Experimental Results}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/heldout_metrics.pdf}
+\caption{All metrics in Table~\ref{tab:main}, shown as metric-specific panels on their native scales. Higher is better except for Brier score. Score-fusion rows have no Brier score because the fused ranking scores are not calibrated probabilities. The strongest individual baseline and proposed model are bolded.}
+\label{fig:metrics}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/ranking_curves.pdf}
+\caption{Precision--recall and ROC curves for the strongest tabular baselines, LSTM, GCN--LSTM, and the proposed reliability-aware temporal GNN on the held-out years. The dashed line in the precision--recall panel marks test prevalence. Curves use saved test-set predictions.}
+\label{fig:curves}
+\end{figure*}
+
 \input{results_table.tex}
 
 Table~\ref{tab:published} preserves the published XGBoost benchmark value. It is context only, not a matched test-set result.
 \input{published_benchmark_table.tex}
 
-XGBoost is the strongest individual model in this evaluation on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. The reliability-aware temporal GNN scores 0.0758 lower in AP and 0.1353 lower in ROC-AUC. GCN improves AP over the LSTM by 0.0086, while its ROC-AUC is lower. Each neural model uses one training seed.
+XGBoost is the strongest individual baseline in this evaluation on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. Our proposed reliability-aware temporal GNN scores 0.0758 lower in AP and 0.1353 lower in ROC-AUC. GCN improves AP over the LSTM by 0.0086, while its ROC-AUC is lower. Each neural model uses one training seed. Figure~\ref{fig:metrics} visualizes every reported table metric, while Figure~\ref{fig:curves} shows the corresponding ranking curves for representative models.
 
 The validation-selected LightGBM--GraphSAGE blend increases test AP from 0.1116 to 0.1181, while ROC-AUC decreases from 0.8790 to 0.8705. The paired company-clustered AP difference is 0.00515 with 95\% interval [--0.00285, 0.01913]; the ROC-AUC difference is --0.00869 [--0.01783, --0.00065]. For XGBoost, validation selects a GNN weight of 0.1. The fused test AP is 0.1133 and ROC-AUC is 0.8806, compared with 0.1141 and 0.8868 for XGBoost alone. The paired AP-difference interval is [--0.01363, 0.01493], and the ROC-AUC difference is --0.00626 [--0.01558, --0.00037].
 

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T22:54:05Z",
+  "title": "Design System: Economic Atlas — Financial Distress Research",
+  "extensions": {
+    "colorMeta": {
+      "survey-ink": { "role": "neutral", "displayName": "Survey Ink", "canonical": "#202d32", "tonalRamp": ["oklch(15% 0.012 225)", "oklch(25% 0.022 225)", "oklch(35% 0.032 225)", "oklch(45% 0.04 225)", "oklch(55% 0.04 225)", "oklch(65% 0.032 225)", "oklch(80% 0.02 225)", "oklch(95% 0.005 225)"] },
+      "map-stock": { "role": "neutral", "displayName": "Map Stock", "canonical": "#f4f1e9", "tonalRamp": ["oklch(15% 0.012 90)", "oklch(25% 0.022 90)", "oklch(35% 0.032 90)", "oklch(45% 0.04 90)", "oklch(55% 0.04 90)", "oklch(65% 0.032 90)", "oklch(80% 0.02 90)", "oklch(95% 0.005 90)"] },
+      "bright-stock": { "role": "neutral", "displayName": "Bright Stock", "canonical": "#fbfaf6", "tonalRamp": ["oklch(15% 0.008 90)", "oklch(25% 0.015 90)", "oklch(35% 0.022 90)", "oklch(45% 0.028 90)", "oklch(55% 0.028 90)", "oklch(65% 0.022 90)", "oklch(80% 0.014 90)", "oklch(95% 0.004 90)"] },
+      "quiet-ink": { "role": "neutral", "displayName": "Quiet Ink", "canonical": "#59645f", "tonalRamp": ["oklch(15% 0.012 165)", "oklch(25% 0.022 165)", "oklch(35% 0.032 165)", "oklch(45% 0.04 165)", "oklch(55% 0.04 165)", "oklch(65% 0.032 165)", "oklch(80% 0.02 165)", "oklch(95% 0.005 165)"] },
+      "atlas-rule": { "role": "neutral", "displayName": "Atlas Rule", "canonical": "#d5d3c8", "tonalRamp": ["oklch(15% 0.01 105)", "oklch(25% 0.018 105)", "oklch(35% 0.026 105)", "oklch(45% 0.032 105)", "oklch(55% 0.032 105)", "oklch(65% 0.026 105)", "oklch(80% 0.016 105)", "oklch(95% 0.004 105)"] },
+      "peer-green": { "role": "secondary", "displayName": "Peer Green", "canonical": "#3e806e", "tonalRamp": ["oklch(15% 0.025 165)", "oklch(25% 0.045 165)", "oklch(35% 0.065 165)", "oklch(45% 0.08 165)", "oklch(55% 0.08 165)", "oklch(65% 0.065 165)", "oklch(80% 0.04 165)", "oklch(95% 0.01 165)"] },
+      "peer-green-wash": { "role": "secondary", "displayName": "Peer Green Wash", "canonical": "#e4eee7", "tonalRamp": ["oklch(15% 0.018 150)", "oklch(25% 0.032 150)", "oklch(35% 0.045 150)", "oklch(45% 0.055 150)", "oklch(55% 0.055 150)", "oklch(65% 0.045 150)", "oklch(80% 0.028 150)", "oklch(95% 0.007 150)"] },
+      "signal-blue": { "role": "primary", "displayName": "Signal Blue", "canonical": "#287b8e", "tonalRamp": ["oklch(15% 0.03 215)", "oklch(25% 0.055 215)", "oklch(35% 0.08 215)", "oklch(45% 0.1 215)", "oklch(55% 0.1 215)", "oklch(65% 0.08 215)", "oklch(80% 0.05 215)", "oklch(95% 0.012 215)"] },
+      "signal-blue-wash": { "role": "secondary", "displayName": "Signal Blue Wash", "canonical": "#e5edf0", "tonalRamp": ["oklch(15% 0.014 220)", "oklch(25% 0.025 220)", "oklch(35% 0.036 220)", "oklch(45% 0.045 220)", "oklch(55% 0.045 220)", "oklch(65% 0.036 220)", "oklch(80% 0.022 220)", "oklch(95% 0.006 220)"] },
+      "test-rust": { "role": "primary", "displayName": "Test Rust", "canonical": "#a14d35", "tonalRamp": ["oklch(15% 0.035 40)", "oklch(25% 0.065 40)", "oklch(35% 0.095 40)", "oklch(45% 0.12 40)", "oklch(55% 0.12 40)", "oklch(65% 0.095 40)", "oklch(80% 0.06 40)", "oklch(95% 0.015 40)"] },
+      "test-rust-wash": { "role": "secondary", "displayName": "Test Rust Wash", "canonical": "#f1e6df", "tonalRamp": ["oklch(15% 0.018 45)", "oklch(25% 0.032 45)", "oklch(35% 0.045 45)", "oklch(45% 0.055 45)", "oklch(55% 0.055 45)", "oklch(65% 0.045 45)", "oklch(80% 0.028 45)", "oklch(95% 0.007 45)"] },
+      "muted-blue-gray": { "role": "tertiary", "displayName": "Muted Blue-Gray", "canonical": "#4e6683", "tonalRamp": ["oklch(15% 0.025 250)", "oklch(25% 0.045 250)", "oklch(35% 0.065 250)", "oklch(45% 0.08 250)", "oklch(55% 0.08 250)", "oklch(65% 0.065 250)", "oklch(80% 0.04 250)", "oklch(95% 0.01 250)"] },
+      "muted-lilac-wash": { "role": "tertiary", "displayName": "Muted Lilac Wash", "canonical": "#eee8f2", "tonalRamp": ["oklch(15% 0.012 300)", "oklch(25% 0.022 300)", "oklch(35% 0.032 300)", "oklch(45% 0.04 300)", "oklch(55% 0.04 300)", "oklch(65% 0.032 300)", "oklch(80% 0.02 300)", "oklch(95% 0.005 300)"] },
+      "train-sage": { "role": "secondary", "displayName": "Train Sage", "canonical": "#63877a", "tonalRamp": ["oklch(15% 0.022 165)", "oklch(25% 0.04 165)", "oklch(35% 0.058 165)", "oklch(45% 0.07 165)", "oklch(55% 0.07 165)", "oklch(65% 0.058 165)", "oklch(80% 0.035 165)", "oklch(95% 0.009 165)"] },
+      "validation-ochre": { "role": "secondary", "displayName": "Validation Ochre", "canonical": "#d39a48", "tonalRamp": ["oklch(15% 0.035 75)", "oklch(25% 0.065 75)", "oklch(35% 0.095 75)", "oklch(45% 0.12 75)", "oklch(55% 0.12 75)", "oklch(65% 0.095 75)", "oklch(80% 0.06 75)", "oklch(95% 0.015 75)"] },
+      "map-stock-shade": { "role": "neutral", "displayName": "Map Stock Shade", "canonical": "#f5f4ee", "tonalRamp": ["oklch(15% 0.01 95)", "oklch(25% 0.018 95)", "oklch(35% 0.026 95)", "oklch(45% 0.032 95)", "oklch(55% 0.032 95)", "oklch(65% 0.026 95)", "oklch(80% 0.016 95)", "oklch(95% 0.004 95)"] },
+      "map-ink-wash": { "role": "neutral", "displayName": "Map Ink Wash", "canonical": "#ecebe5", "tonalRamp": ["oklch(15% 0.009 100)", "oklch(25% 0.016 100)", "oklch(35% 0.024 100)", "oklch(45% 0.03 100)", "oklch(55% 0.03 100)", "oklch(65% 0.024 100)", "oklch(80% 0.015 100)", "oklch(95% 0.004 100)"] },
+      "ours-row-wash": { "role": "secondary", "displayName": "Ours Row Wash", "canonical": "#f4eae4", "tonalRamp": ["oklch(15% 0.018 45)", "oklch(25% 0.032 45)", "oklch(35% 0.045 45)", "oklch(45% 0.055 45)", "oklch(55% 0.055 45)", "oklch(65% 0.045 45)", "oklch(80% 0.028 45)", "oklch(95% 0.007 45)"] },
+      "ours-row-ink": { "role": "secondary", "displayName": "Ours Row Ink", "canonical": "#733a27", "tonalRamp": ["oklch(15% 0.035 40)", "oklch(25% 0.065 40)", "oklch(35% 0.095 40)", "oklch(45% 0.12 40)", "oklch(55% 0.12 40)", "oklch(65% 0.095 40)", "oklch(80% 0.06 40)", "oklch(95% 0.015 40)"] },
+      "chart-fusion": { "role": "secondary", "displayName": "Chart Fusion", "canonical": "#b77a3b", "tonalRamp": ["oklch(15% 0.035 65)", "oklch(25% 0.065 65)", "oklch(35% 0.095 65)", "oklch(45% 0.12 65)", "oklch(55% 0.12 65)", "oklch(65% 0.095 65)", "oklch(80% 0.06 65)", "oklch(95% 0.015 65)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Main research question." },
+      "headline": { "displayName": "Headline", "purpose": "Article section headings." },
+      "title": { "displayName": "Title", "purpose": "Figure and subsection headings." },
+      "body": { "displayName": "Body", "purpose": "Long-form reading copy." },
+      "label": { "displayName": "Label", "purpose": "Navigation, metrics, dates, and chart labels." }
+    },
+    "shadows": [
+      { "name": "mobile-menu", "value": "0 9px 24px rgb(32 45 50 / 10%)", "purpose": "Separate the open mobile section menu from the article surface." },
+      { "name": "answer-pin-wash", "value": "0 0 0 4px #f1e6df", "purpose": "A restrained wash behind the lead-answer marker." }
+    ],
+    "motion": [
+      { "name": "smooth-section-scroll", "value": "scroll-behavior: smooth; scroll-padding-top: 96px", "purpose": "Move between article sections while keeping anchored headings clear of the sticky masthead; disabled for reduced motion." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Disables smooth scrolling and reduces animation and transition durations." }
+    ],
+    "breakpoints": [
+      { "name": "compact-desktop", "value": "1050px" },
+      { "name": "mobile", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Article Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Sticky atlas masthead with a quiet section route and a compact mobile disclosure menu.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"#data\">Data</a><a href=\"#model\">Model</a><a href=\"#results\">Results</a><a href=\"#limits\">Limits</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 28px; font: 12px 'DM Sans', sans-serif; } .ds-nav a { color: #4a5755; text-decoration: none; } .ds-nav a:hover { color: var(--rust); } .ds-nav a:focus-visible { outline: 2px solid var(--rust); outline-offset: 4px; }"
+    },
+    {
+      "name": "Paper Link",
+      "kind": "custom",
+      "refersTo": "paper-link",
+      "description": "Underlined masthead link to the research paper, with a compact inline arrow.",
+      "html": "<a class=\"ds-paper-link\" href=\"#paper\">Read the paper <svg viewBox=\"0 0 20 20\" aria-hidden=\"true\"><path d=\"M3.5 10h12m-4.5-4.5L15.5 10 11 14.5\"/></svg></a>",
+      "css": ".ds-paper-link { display: inline-flex; align-items: center; gap: 8px; padding-bottom: 4px; border-bottom: 1px solid #8c958c; color: #4a5755; font: 12px 'DM Sans', sans-serif; text-decoration: none; } .ds-paper-link svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; } .ds-paper-link:hover { color: var(--rust); } .ds-paper-link:focus-visible { outline: 2px solid var(--rust); outline-offset: 4px; }"
+    },
+    {
+      "name": "Year Split and Legend",
+      "kind": "custom",
+      "description": "Fourteen-year train, validation, and test ribbon with an explicit slim legend.",
+      "html": "<div class=\"ds-year-split\"><div class=\"ds-years\"><span class=\"ds-year ds-train\">2016</span><span class=\"ds-year ds-validation\">2018</span><span class=\"ds-year ds-test\">2021</span></div><div class=\"ds-legend\"><span>Train · 2008–2016</span><span>Validation · 2017–2018</span><span>Test · 2019–2021</span></div></div>",
+      "css": ".ds-years { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border-bottom: 1px solid #aeb4ab; } .ds-year { min-height: 42px; padding-bottom: 7px; border-bottom: 8px solid transparent; color: #45524d; font: 12px 'IBM Plex Mono', monospace; text-align: center; } .ds-train { border-color: #63877a; } .ds-validation { border-color: #d39a48; } .ds-test { border-color: var(--rust); } .ds-legend { display: flex; flex-wrap: wrap; gap: 14px 24px; padding-top: 11px; color: #4d5953; font: 12px 'IBM Plex Mono', monospace; }"
+    },
+    {
+      "name": "Held-out Results Chart",
+      "kind": "custom",
+      "description": "Two metric tracks with factual model marks, scales, values, and explanatory note.",
+      "html": "<div class=\"ds-chart-scroll\" role=\"region\" aria-label=\"Held-out model results\"><div class=\"ds-chart\"><span>XGBoost · best baseline</span><span>Average precision 0.1141</span><span>ROC-AUC 0.8868</span><span>(Ours) Reliability-aware temporal GNN</span><span>Average precision 0.0383</span><span>ROC-AUC 0.7515</span></div></div>",
+      "css": ".ds-chart-scroll { overflow-x: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 15px 0 13px; } .ds-chart { min-width: 690px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; color: var(--ink); font: 12px 'IBM Plex Mono', monospace; } .ds-chart > :nth-child(3n + 1) { font-family: 'DM Sans', sans-serif; } .ds-chart > :nth-child(3n + 1):last-of-type { color: var(--rust); font-weight: 700; }"
+    },
+    {
+      "name": "Scrollable Metrics Table",
+      "kind": "custom",
+      "description": "Captioned held-out metrics table with a distinct proposed-model row and horizontal scrolling.",
+      "html": "<div class=\"ds-table-scroll\" role=\"region\" aria-label=\"Held-out test metrics\" tabindex=\"0\"><table><caption>Held-out fiscal-year test metrics, 2019–2021.</caption><thead><tr><th>Model</th><th>AP ↑</th><th>ROC-AUC ↑</th></tr></thead><tbody><tr><th>XGBoost · best baseline</th><td>0.1141</td><td>0.8868</td></tr><tr class=\"ds-ours\"><th>(Ours) Reliability-aware temporal GNN</th><td>0.0383</td><td>0.7515</td></tr></tbody></table></div>",
+      "css": ".ds-table-scroll { overflow-x: auto; border-top: 1px solid #8d978e; border-bottom: 1px solid #8d978e; } .ds-table-scroll table { width: 100%; min-width: 620px; border-collapse: collapse; color: var(--ink); font: 12px 'DM Sans', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; } .ds-table-scroll caption { padding: 12px 0 13px; color: #53615b; text-align: left; white-space: normal; } .ds-table-scroll th, .ds-table-scroll td { padding: 8px 10px; border-top: 1px solid #e3e2da; text-align: right; } .ds-table-scroll th:first-child { text-align: left; } .ds-table-scroll thead th { color: #3f4d47; font: 500 12px 'IBM Plex Mono', monospace; } .ds-table-scroll .ds-ours { background: #f4eae4; color: #733a27; }"
+    },
+    {
+      "name": "Method Map",
+      "kind": "custom",
+      "description": "Outlined method-flow nodes and thin arrows, with horizontal overflow retained on mobile.",
+      "html": "<div class=\"ds-method-map\" role=\"img\" aria-label=\"Financial history flows through temporal and peer graph encoding to a distress score\"><span>Firm history</span><span>LSTM encoder</span><span>Financial peers</span><span>Link reliability</span><span>Gated messages</span><span>Score</span></div>",
+      "css": ".ds-method-map { display: flex; gap: 12px; overflow-x: auto; padding: 20px 11px 13px; background: #f5f4ee; border-top: 1px solid #d6d8ce; border-bottom: 1px solid #d6d8ce; } .ds-method-map span { flex: 0 0 auto; padding: 24px 18px; border: 1px solid #68746c; border-radius: 11px; color: var(--ink); font: 600 15px 'DM Sans', sans-serif; } .ds-method-map span:nth-child(3) { border-color: var(--blue); background: var(--blue-light); } .ds-method-map span:nth-child(4) { border-color: #b46c51; background: var(--rust-light); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Economic Atlas",
+    "overview": "Economic Atlas treats a research page like a field guide to evidence: survey-ink blue-black type sits on warm map-stock, with fine rules and carefully labeled marks giving structure to the reading path. The desktop composition pairs a slim contents legend with a calm article column. On small screens, the legend yields to a compact section menu and wide evidence regions remain scrollable so their labels and comparisons stay intact.\n\nThe visual language is factual and restrained. Green, blue, ochre, and rust distinguish actual data splits, model families, or the proposed model; every mark is explained by a nearby label or legend. The page leads with a plain account of the measured outcome: XGBoost is the best individual baseline, and the proposed temporal GNN marked “(Ours)” scores lower in this local fiscal-year evaluation. Source-reported results from another cohort remain separately labeled from local measurements.",
+    "keyCharacteristics": [
+      "Warm paper surfaces, survey-ink type, and thin map-like dividers.",
+      "A narrow legend and readable article measure organize a long-form research narrative.",
+      "Restrained color encodes real years, model families, and comparison status.",
+      "Results and limitations appear together, with source-reported and locally measured evidence kept distinct."
+    ],
+    "rules": [
+      { "name": "The Evidence Color Rule", "body": "Color identifies an actual data split, model family, or proposed-model result. Keep the slim legend and nearby labels so color never carries the comparison alone.", "section": "colors" },
+      { "name": "The Measured Type Rule", "body": "Keep scores, table values, and axis ticks in tabular or monospaced forms; reserve Newsreader for the editorial reading hierarchy.", "section": "typography" }
+    ],
+    "dos": [
+      "Do use Map Stock and Bright Stock as the page and article surfaces, with Survey Ink for the primary text.",
+      "Do label each data color with its year split or model-family meaning in a slim legend or adjacent copy.",
+      "Do state clearly that XGBoost is the best individual baseline and the proposed “(Ours)” model is lower in this local evaluation.",
+      "Do preserve the source-reported versus locally measured distinction in charts, captions, and prose.",
+      "Do keep mobile charts and tables in their existing horizontal scroll regions.",
+      "Do retain visible keyboard focus, the readable article measure, and the reduced-motion behavior."
+    ],
+    "donts": [
+      "Don't use Test Rust as decoration across large areas; it marks the test window, the proposed model, and navigation states.",
+      "Don't make the local proposed-model result look like the leading baseline.",
+      "Don't merge source-reported comparisons with local holdout measurements.",
+      "Don't remove chart scales, table captions, axis labels, or the color legend when reusing evidence visuals.",
+      "Don't add button, form, or card patterns; the current interface uses links, navigation, data regions, and an article layout."
+    ]
+  }
+}
