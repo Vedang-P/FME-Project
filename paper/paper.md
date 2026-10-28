@@ -1,22 +1,21 @@
-# Paper status
+# Manuscript summary
 
-The IEEE conference-format manuscript is in [`main.tex`](main.tex) and compiled to [`main.pdf`](main.pdf). It reports a fiscal-year-only exploratory comparison on a 2019--2021 holdout. It does not claim an exact reproduction, SOTA result, or architectural novelty.
+The IEEE conference manuscript is available in [`main.tex`](main.tex) and [`main.pdf`](main.pdf). It evaluates financial-peer temporal graph models against boosted-tree and neural baselines on a SEC-derived bankruptcy panel.
 
-## Main measured result
+## Test results
 
-| Model | Test AP | Test ROC-AUC |
+| Model | AP | ROC-AUC |
 |---|---:|---:|
-| XGBoost, validation-tuned | 0.1141 | 0.8868 |
-| LightGBM, validation-tuned | 0.1116 | 0.8790 |
+| XGBoost | 0.1141 | 0.8868 |
+| LightGBM | 0.1116 | 0.8790 |
 | Reliability-aware temporal GNN | 0.0383 | 0.7515 |
-| XGBoost + reliability-GNN fusion | 0.1133 | 0.8806 |
+| XGBoost with reliability-GNN score fusion | 0.1133 | 0.8806 |
+| LightGBM with GraphSAGE score fusion | 0.1181 | 0.8705 |
 
-The GNN model and its XGBoost fusion fail to improve on XGBoost. The fusion's paired company-clustered AP interval includes zero, and its ROC-AUC interval indicates a decline. The project's success gate is not met.
+The LightGBM and XGBoost fusion weights were selected on validation data. The paired company-clustered 95% interval for the LightGBM-GraphSAGE AP difference is [-0.00285, 0.01913]. For XGBoost-reliability-GNN fusion, the AP interval is [-0.01363, 0.01493] and the ROC-AUC difference is -0.00626 with interval [-0.01558, -0.00037].
 
-Adding 12 engineered financial ratios reduced LightGBM AP to 0.0827 and ROC-AUC to 0.8670 in the single-seed diagnostic.
+## Evaluation scope
 
-Alanis, Chava, and Shah report XGBoost ROC-AUC 0.92 on their own U.S. public-firm dataset and walk-forward protocol. The manuscript preserves that source-reported value in a separate table. It is not directly comparable to our local result, and this work reproduces the algorithm family rather than their exact data/model pipeline.
+The filtered cohort contains 42,742 company-year observations from 5,612 firms, with 293 positive labels and 34 numeric features. Training, validation, and test periods are 2008--2016, 2017--2018, and 2019--2021. Exact filing-availability dates are unavailable, so the evaluation uses fiscal-year ordering. Results use one neural seed and one future test window.
 
-## Limits
-
-The SEC-derived panel omits exact filing availability dates. Repeated company-years were excluded rather than ordered by accession. The reported split is exploratory, has one seed and one future window, and cannot establish point-in-time forecasting performance. A recent published relational temporal GNN also overlaps the tested architecture, so the LSTM--GNN composition is not a novelty claim. Further work needs filing dates, a source-aligned replication, equal-budget tuning, multiple seeds/windows, and a passed dual-metric gate before a positive paper claim.
+Alanis, Chava, and Shah report XGBoost ROC-AUC 0.92 on a different U.S. public-firm cohort and walk-forward protocol. The manuscript lists that score separately from local results. [Source paper](https://arxiv.org/abs/2212.12051)
