@@ -1,0 +1,84 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{microtype}
+\title{An LSTM--GNN Extension for Bankruptcy Prediction: An Exploratory Reproduction Study}
+\author{\IEEEauthorblockN{Atharv Shanker, Vedang Pandey, and Shoumik Mitra}}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Financial distress prediction is a rare-event ranking problem in which gradient-boosted trees are a demanding baseline. We compare a validation-tuned XGBoost model with LSTM, graph, and score-fusion extensions on a public SEC-derived numeric dataset. The eligible cohort has 42,742 company-year observations after excluding 214 repeated company-year filings whose reporting dates are unavailable; it contains 34 numeric features and 293 next-year bankruptcy labels. We train on 2008--2016, validate on 2017--2018, and test on 2019--2021. Local XGBoost obtains test average precision (AP) 0.1141 and ROC-AUC 0.8868. The reliability-aware temporal GNN alone obtains AP 0.0383 and ROC-AUC 0.7515. Validation selects a 0.1 GNN weight in XGBoost fusion, but test AP falls to 0.1133 and ROC-AUC to 0.8806; the paired company-clustered 95\% intervals show no resolved AP gain and a ROC-AUC decline. A published XGBoost benchmark reports ROC-AUC 0.92 on a different U.S. public-firm cohort and walk-forward protocol. We report that source value without treating it as directly comparable or claiming an exact reproduction. Our graph-temporal design is an evaluated extension, not a novelty claim: closely related temporal relational GNNs have already been published. The results do not meet the project's improvement criterion. Missing filing dates also make this fiscal-year exploratory evidence, not verified filing-time forecasting.
+\end{abstract}
+
+\begin{IEEEkeywords}
+bankruptcy prediction, financial distress, graph neural networks, temporal learning, LightGBM, rare-event ranking
+\end{IEEEkeywords}
+
+\section{Introduction}
+Corporate bankruptcy is costly to firms, investors, employees, and lenders. Predictive models must find a small number of future events among many non-events, making average precision (AP) and recall at an operating point more informative than accuracy. Prior work on publicly traded U.S. firms reports that gradient-boosted trees are strong one-year-ahead predictors, establishing a demanding tabular baseline \cite{alanis2022benchmark}. Graph neural networks (GNNs) have also been applied to bankruptcy and distress prediction, including models that combine corporate relations with temporal encoders \cite{zhao2023comrisk,sun2026rahtgnn}. Thus, adding an LSTM to a GNN is not itself a novelty claim.
+
+We ask whether an LSTM--GNN extension adds predictive information beyond a tuned XGBoost model on a chronological holdout. We implement an LSTM with relation-specific financial-peer messages, test validation-selected score fusion, and report the published XGBoost ROC-AUC as separate context. This is a reproduction attempt at the algorithm-family level, not an exact reproduction of the published study: our dataset, predictors, feature timing, and test protocol differ. The paper's contribution is an auditable comparison on this source-specific panel, with explicit duplicate resolution, a timing limitation, and paired clustered uncertainty. We do not claim architectural novelty or state-of-the-art performance.
+
+\section{Related Work}
+Altman introduced a discriminant score for bankruptcy prediction \cite{altman1968}, and subsequent research studied hazard models and machine learning. Alanis \emph{et al.} benchmarked eight methods on U.S. public firms using walk-forward one-year-ahead forecasts and report ROC-AUC 0.92 for XGBoost \cite{alanis2022benchmark}. We preserve that source-reported value in Table~\ref{tab:published}; differences in cohort, predictors, and protocol make direct numerical ranking invalid. Zhao \emph{et al.} combine intra-risk and contagion-risk signals with graph learning \cite{zhao2023comrisk}. Sun \emph{et al.} report a relation-attention temporal heterogeneous GNN with GRU encoding and validation-trained ensemble fusion for distress prediction \cite{sun2026rahtgnn}. This recent method overlaps substantially with the temporal, relational, and fusion choices tested here. We therefore do not claim that LSTM--GNN integration, reliability weighting, or graph-score fusion is novel. These studies motivate a demanding tree comparison and careful qualification of this exploratory extension.
+
+The American Stock Market bankruptcy release initially considered for this project has a target constant within every company across its observed years, so it cannot support the intended next-year forecasting task as released \cite{lombardo2022}. We instead use the public SEC-derived numeric extension and its inherited next-year bankruptcy labels \cite{potiriadis2026}. The thesis that introduced this extension reports stronger AP for its FinBERT text model than for its numeric-only variants; those published figures are context, not results from our run, and are not directly comparable with our numeric-only experiment.
+
+\section{Data and Task}
+\subsection{Source and Cohort}
+The source contains filing-level rows joined by company identifier and SEC accession, a binary label, a year, and 34 dense numeric financial concepts. Its reported full cohort is 42,956 filings from 2008--2021. We audited the downloaded dense variant and found 214 rows belonging to repeated company-year groups (103 groups); one repeated group had conflicting labels. Since the release does not provide filing dates, selecting an amendment or duplicate as the canonical filing would require an unsupported temporal assumption. We therefore exclude every row in a repeated company-year group. The resulting cohort contains 42,742 observations, 5,612 firms, 293 positive observations (0.6855\%), and 34 numeric predictors. Source rows and license files are not redistributed by this project; readers should download them from the repository record and cite the dataset author \cite{potiriadis2026}.
+
+The source defines its inherited target as bankruptcy in the next fiscal year. It does not provide the actual filing/publication date for each observation, however, and 103 repeated company-year groups show why a fiscal year alone cannot order all filings. Results therefore estimate a year-ordered held-out ranking under the inherited label, not a verified as-of-filing prediction. This limitation prevents the experiment from satisfying the project's full point-in-time success gate.
+
+\subsection{Chronological Split}
+We train on fiscal years 2008--2016, select models and fusion weights on 2017--2018, and evaluate once on 2019--2021. The test set contains 9,032 rows and 64 positive labels (0.7086\% prevalence). Company identifiers occur in multiple years, so the primary split tests future years for a partially overlapping issuer population; the present report does not claim company-disjoint generalization. No test labels are used for feature transforms, model selection, or threshold selection.
+
+\section{Methods}
+\subsection{Preprocessing and Strong Tabular Baselines}
+Numeric features are converted to finite values, winsorized at the training-set 1st and 99th percentiles, median-imputed, and scaled by the training interquartile range. All transformation parameters are fitted on training years. We compare logistic regression, decision tree, random forest, histogram gradient boosting, MLP, LSTM, GCN, GraphSAGE, reliability-aware temporal GNN, LightGBM, and XGBoost. For each GBDT family we evaluate eight declared configurations on both the most recent-year input and flattened five-year history (16 validation trials), then select by validation AP. LightGBM selects 300 trees, learning rate 0.03, seven leaves, maximum depth four, 20 minimum child samples, and $\ell_2$ penalty 1.0, with balanced class weighting. XGBoost selects depth two, learning rate 0.03, 300 trees, minimum child weight 10, $\ell_2$ penalty 1.0, row and feature subsampling 0.8, and training-set positive-class weighting.
+
+\subsection{Reliability-Aware Temporal GNN}
+For firm $i$ in year $t$, an LSTM maps a trailing sequence of up to five annual feature vectors to state $\mathbf{h}_{i,t}$. For each financial feature group $r$, we construct a directed $k$-nearest-neighbor graph ($k=10$) using cosine similarity of the corresponding standardized features in year $t$. For edge $(j,i)$, the base weight is $s_{ji,t}=\max(0.01,1-d_{\cos}(\mathbf{x}_{j,t},\mathbf{x}_{i,t}))$. We down-weight unstable neighborhoods using the Jaccard overlap $p_{i,t}$ between firm $i$'s peer sets in adjacent snapshots:
+\begin{equation}
+ w_{ji,t}^{(r)} = s_{ji,t}^{(r)}\left(0.5+0.5p_{i,t}^{(r)}\right).
+\end{equation}
+Each relation channel computes a weighted mean of neighboring temporal states. A learned softmax gate combines relation messages, which are fused with the firm's own state and passed to a binary classifier. The GCN and GraphSAGE comparators use the same LSTM states and contemporaneous peer graph, with a single merged message channel. Financial similarity edges are predictive associations; they do not establish contagion or causal links.
+
+\subsection{Validation-Selected Score Fusion}
+We transform the tree and graph scores with robust location/scale parameters fitted on validation data, then evaluate convex combinations $q=(1-\alpha)q_{\mathrm{tree}}+\alpha q_{\mathrm{graph}}$ for $\alpha\in\{0,0.1,\ldots,1\}$. We choose the combination with highest validation AP subject to validation ROC-AUC not falling below the tree score. The same validation-only rule selects $\alpha=0.2$ for LightGBM--GraphSAGE, $\alpha=0.1$ for LightGBM--reliability-GNN, and $\alpha=0.1$ for XGBoost--reliability-GNN. XGBoost--GCN and XGBoost--GraphSAGE select $\alpha=0$, so validation does not support adding either message-passing score under this rule.
+
+\subsection{Metrics and Uncertainty}
+AP is the primary metric and ROC-AUC is co-required. We also report Brier score for individual probability models and precision/recall at a threshold chosen on validation to target 80\% recall. Fused standardized scores are rankings, not calibrated probabilities; we do not report Brier scores for them. Paired 95\% confidence intervals compare test predictions by resampling companies with replacement and retaining all test-year rows for each sampled company (2,000 valid replicates). One training seed (42) and one future test window are available, so this interval does not capture seed or period variability.
+
+\section{Experimental Results}
+\input{results_table.tex}
+
+Table~\ref{tab:published} preserves the published XGBoost benchmark value. It is context only, not a matched test-set result.
+\input{published_benchmark_table.tex}
+
+XGBoost is the strongest individual model in our local run on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. The reliability-aware temporal GNN alone trails XGBoost by 0.0758 AP and 0.1353 ROC-AUC. GCN improves AP over the LSTM alone by 0.0086, but its ROC-AUC is slightly lower. This comparison does not isolate the graph contribution from random initialization or training variance because only one seed is reported.
+
+The validation-selected LightGBM--GraphSAGE blend increases test AP from 0.1116 to 0.1181 (+0.0065 absolute, +5.9\% relative), while ROC-AUC decreases from 0.8790 to 0.8705. The paired company-clustered AP-difference estimate is 0.00515 with 95\% interval [--0.00285, 0.01913]; the ROC-AUC difference is --0.00869 [--0.01783, --0.00065]. This AP increase is not statistically resolved, and ROC-AUC declines. For XGBoost, validation sets the reliability-GNN weight to 0.1, yet fused test AP falls to 0.1133 and ROC-AUC to 0.8806. The paired AP-difference interval is [--0.01363, 0.01493], while ROC-AUC falls by 0.00626 [--0.01558, --0.00037]. Neither fusion passes the dual-metric requirement.
+
+An additional diagnostic adds 12 conventional financial ratios to the 34 source features. The ratio-augmented LightGBM run scores AP 0.0827 and ROC-AUC 0.8670, below its raw-feature result; the ratio-augmented reliability-GNN scores AP 0.0286. This single-seed diagnostic does not support the claim that these engineered ratios improve the current models.
+
+The originating dataset thesis reports different experiments on its unreduced filing cohort: its raw numeric XBRL representation has rounded AP 0.08 and ROC-AUC 0.87, while its text FinBERT system has AP 0.30 and ROC-AUC 0.82 \cite{potiriadis2026}. These are source-reported results, not ours. We do not reproduce the thesis model or the Alanis et al. model exactly: the current data and feature protocol are not aligned with either source. We reproduce the XGBoost model family on our local data and preserve published results only as context.
+
+\section{Discussion}
+The experiments provide no evidence that the proposed model is state of the art. The reliability-aware model did not outperform conventional GCN/GraphSAGE, LightGBM, or XGBoost. The LightGBM--GraphSAGE blend produced a modest AP point gain at the cost of lower ROC-AUC; its AP interval includes zero. The XGBoost--reliability-GNN blend regressed on both test metrics. Recent work already combines relational temporal graph learning and ensemble fusion for distress prediction, so this design is not a defensible novelty claim. The project success gate is not met. Neither an isolated AP increase nor a year-only split justifies a stronger claim.
+
+Several factors may explain the weak graph results. The dense inputs combine raw dollar values with incomplete observations, and peer similarity may primarily encode firm scale. The positive test count is only 64, the validation period has few positives, and the representation has no explicit industry or supply-chain relations. The source omits filing dates; year-based ordering may not reflect the information availability date or distinguish amendments. Duplicate removal changes the original cohort, while the single random seed makes model comparisons uncertain. Finally, the external published text baseline is not comparable to our numeric-only design.
+
+\section{Conclusion}
+We implemented a fiscal-year exploratory comparison of a reliability-aware temporal GNN, conventional graph baselines, LightGBM, XGBoost, and validation-selected score fusion. Our strongest local model is XGBoost (AP 0.1141, ROC-AUC 0.8868). The proposed GNN and its XGBoost fusion do not improve the required metrics. This is a negative result, not an SOTA claim, and the architecture is not novel relative to recent temporal relational GNN work. Before making a success claim, a follow-up study needs exact filing dates, a source-aligned reproduction, a larger equal-budget search, multiple seeds and future windows, and a frozen dual-metric success gate.
+
+\section*{Reproducibility and Data Availability}
+The repository provides data preparation, LightGBM and XGBoost tuning, graph training, score fusion, and table-generation scripts in \path{scripts/prepare_uop_numeric_panel.py}, \path{scripts/run_lightgbm_sweep.py}, \path{scripts/run_xgboost_sweep.py}, \path{train.py}, and \path{scripts/evaluate_score_fusion.py}. Exact commands and dataset download instructions are in the README. Raw source data and derived filing-level predictions are excluded from version control. The experiment ledger and result summary preserve measured local outputs; published benchmark values are separately labeled as source-reported and non-comparable.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\end{document}

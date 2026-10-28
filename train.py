@@ -52,6 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--recall_target", type=float, default=0.8)
     parser.add_argument("--observation_end_date", type=str, default=None)
     parser.add_argument("--horizon_days", type=int, default=365)
+    parser.add_argument("--allow-year-only-source", action="store_true", help="Run an explicitly exploratory fiscal-year split when the source omits filing availability dates; results do not certify exact filing-time evaluation.")
     parser.add_argument("--ablations", action="store_true", help="Run leave-one-relation-out and no-persistence variants.")
     return parser.parse_args()
 
@@ -148,9 +149,8 @@ def fit_neural(model, frame, features, snapshots, histories, row_by_year, train_
     return model, history_log, best_epoch
 
 
-def evaluate_model(model, histories, snapshots, frame, row_by_year, years, device, recall_target):
+def evaluate_model(model, histories, snapshots, frame, row_by_year, years, device, threshold):
     y_true, scores, row_ids = _evaluate_neural(model, histories, snapshots, frame.label.to_numpy(dtype=int), row_by_year, years, device)
-    threshold = choose_recall_threshold(y_true, scores, recall_target)
     return binary_metrics(y_true, scores, threshold), pd.DataFrame({"row_id": row_ids, "year": frame.iloc[row_ids].fiscal_year.to_numpy(), "company_id": frame.iloc[row_ids].company_id.to_numpy(), "label": y_true, "score": scores, "threshold": threshold})
 
 
@@ -286,15 +286,19 @@ def main() -> int:
             (output_dir / "audit_failure.json").write_text(json.dumps({"error": message, "audit": audit}, indent=2) + "\n")
             raise DatasetAuditError(message)
         if "available_date" not in frame.columns:
-            message = "Point-in-time forecasting requires available_date; provide filing/publication dates for every company-year."
-            (output_dir / "audit_failure.json").write_text(json.dumps({"error": message, "audit": audit}, indent=2) + "\n")
-            raise DatasetAuditError(message)
-        parsed_availability = pd.to_datetime(frame.available_date, errors="coerce", utc=True)
-        if parsed_availability.isna().any():
-            message = "available_date contains missing or invalid dates."
-            (output_dir / "audit_failure.json").write_text(json.dumps({"error": message, "audit": audit}, indent=2) + "\n")
-            raise DatasetAuditError(message)
-        frame["available_date"] = parsed_availability
+            if not args.allow_year_only_source:
+                message = "Point-in-time forecasting requires available_date; provide filing/publication dates for every company-year, or explicitly opt in to a fiscal-year-only exploratory run."
+                (output_dir / "audit_failure.json").write_text(json.dumps({"error": message, "audit": audit}, indent=2) + "\n")
+                raise DatasetAuditError(message)
+            audit["availability_date_status"] = "not provided; fiscal-year-only exploratory split"
+        else:
+            parsed_availability = pd.to_datetime(frame.available_date, errors="coerce", utc=True)
+            if parsed_availability.isna().any():
+                message = "available_date contains missing or invalid dates."
+                (output_dir / "audit_failure.json").write_text(json.dumps({"error": message, "audit": audit}, indent=2) + "\n")
+                raise DatasetAuditError(message)
+            frame["available_date"] = parsed_availability
+            audit["availability_date_status"] = "source-provided dates validated"
         source_label = str(data_path)
         epochs = args.epochs
 
@@ -343,6 +347,7 @@ def main() -> int:
     }
     all_results = dict(tabular_results)
     histories_by_model = {}
+    validation_prediction_tables = {}
     best_model_state = None
     model_specs = [
         ("lstm", neural_models["lstm"], conventional_graphs),
@@ -360,11 +365,13 @@ def main() -> int:
     for name, model, model_graphs in model_specs:
         model = model.to(device)
         model, history_log, best_epoch = fit_neural(model, frame, seq_rows, model_graphs, histories, row_by_year, train_years, val_years, epochs, args.patience, args.learning_rate, device, args.history_length, args.seed)
-        all_results[name], pred = evaluate_model(model, histories, model_graphs, frame, row_by_year, test_years, device, args.recall_target)
         validation_y, validation_score, _ = _evaluate_neural(model, histories, model_graphs, frame.label.to_numpy(dtype=int), row_by_year, val_years, device)
         validation_threshold = choose_recall_threshold(validation_y, validation_score, args.recall_target)
         validation_metrics = binary_metrics(validation_y, validation_score, validation_threshold)
+        all_results[name], pred = evaluate_model(model, histories, model_graphs, frame, row_by_year, test_years, device, validation_threshold)
         all_results[name].update({"validation_pr_auc": validation_metrics["pr_auc"], "validation_roc_auc": validation_metrics["roc_auc"]})
+        validation_row_ids = np.concatenate([row_by_year[y] for y in val_years if len(row_by_year.get(y, []))])
+        validation_prediction_tables[name] = pd.DataFrame({"row_id": validation_row_ids, "year": frame.iloc[validation_row_ids].fiscal_year.to_numpy(), "company_id": frame.iloc[validation_row_ids].company_id.to_numpy(), "label": validation_y, "score": validation_score, "threshold": validation_threshold, "model": name})
         prediction_tables[name] = pred
         histories_by_model[name] = history_log
         if name == "reliability_temporal_gnn":
@@ -372,6 +379,8 @@ def main() -> int:
         print(f"{name} | test PR-AUC: {all_results[name]['pr_auc']}")
     predictions = pd.concat([table.assign(model=name) for name, table in prediction_tables.items()], ignore_index=True)
     predictions.to_csv(output_dir / "predictions.csv", index=False)
+    if validation_prediction_tables:
+        pd.concat(validation_prediction_tables.values(), ignore_index=True).to_csv(output_dir / "validation_predictions.csv", index=False)
     metrics = {
         "source": source_label,
         "synthetic_smoke_only": bool(args.smoke_test),
@@ -382,6 +391,7 @@ def main() -> int:
         "graph_relations": relations,
         "history_length": args.history_length,
         "splits": {"train_years": train_years, "validation_years": val_years, "test_years": test_years},
+        "availability_date_status": audit.get("availability_date_status", "synthetic smoke panel"),
         "models": all_results,
         "training_curves": histories_by_model,
     }

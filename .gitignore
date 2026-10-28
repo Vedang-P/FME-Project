@@ -10,3 +10,7 @@ results/**
 !results/.gitkeep
 .DS_Store
 .rstack/
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log

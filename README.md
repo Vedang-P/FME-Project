@@ -6,7 +6,9 @@ The original project synopsis is preserved at [`synopsis.pdf`](synopsis.pdf).
 
 ## Research status
 
-The initial public U.S. bankruptcy dataset has been audited, and its `status_label` is constant for every company across all observed years. Its CSV also reports 8,971 firms while the paper reports 8,262. It therefore does **not** provide the point-in-time next-year labels required by this project as released. The training command rejects it for forecasting. No performance claims or results are reported.
+The first candidate, the American Stock Market bankruptcy CSV, has a firm-constant label and cannot support next-year forecasting as released; see [`docs/data-audit.md`](docs/data-audit.md). We then audited a public SEC-derived numeric dataset with next-year labels. Its filing dates are absent and 103 company-years contain repeated filings, including one conflicting label group. The local experiment excludes those repeated company-years and uses year-only chronological splits. This permits an exploratory benchmark, but it is **not** a verified filing-time study.
+
+One seed was run on the 2019--2021 holdout (9,032 filings, 64 positives). Tuned XGBoost reached AP 0.1141 and ROC-AUC 0.8868, compared with LightGBM at 0.1116 and 0.8790. The reliability-aware temporal GNN reached AP 0.0383 and ROC-AUC 0.7515. Validation-selected XGBoost--GNN fusion reached AP 0.1133 and ROC-AUC 0.8806, below XGBoost on both metrics; its paired company-clustered AP interval includes zero and ROC-AUC declines. **The GNN did not beat the strong baseline on both required metrics, so the success criterion is not met.** Alanis et al. report XGBoost ROC-AUC 0.92 on a different cohort and walk-forward protocol; it is listed as source-reported context, not a directly comparable score or exact reproduction. Recent temporal relational GNN work also overlaps the tested architecture, so no novelty claim is made for LSTM--GNN integration. These are preliminary fiscal-year-only results, not an SOTA claim. See the [IEEE-style paper PDF](paper/main.pdf), [source-specific data audit](docs/uop-data-audit.md), and [`paper/experiment_results.json`](paper/experiment_results.json).
 
 The project accepts a prepared, licensed `panel.csv` with:
 
@@ -29,18 +31,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Place the prepared panel at `data/raw/panel.csv`, or pass another path with `--data_file`.
+The SEC-derived numeric source is available from the [University of Peloponnese repository record](https://amitos.library.uop.gr/items/7bc5792c-2982-4928-8f75-42950fc2ef25). Download `numeric-dataset-variants.zip`, then place `companyfacts_dense.csv` at `data/raw/uop-bankruptcy/companyfacts_dense.csv`. The source's attached terms require attribution and do not grant this project redistribution rights; raw data are therefore ignored by Git. Read [`docs/uop-data-audit.md`](docs/uop-data-audit.md) before using the prepared panel.
 
 ## Audit and run
 
 ```bash
-python scripts/audit_dataset.py --data_file data/raw/american_bankruptcy_dataset.csv
-python train.py --data_dir data/raw --output_dir results/run-001
-python train.py --data_file data/raw/panel.csv --output_dir results/run-001
-python train.py --smoke_test --output_dir results/smoke
+python scripts/prepare_uop_numeric_panel.py
+python scripts/run_lightgbm_sweep.py
+python scripts/run_xgboost_sweep.py
+python train.py --data_file data/processed/uop_numeric_panel.csv --output_dir results/uop-seed42-corrected --train_end_year 2016 --validation_end_year 2018 --epochs 12 --patience 3 --hidden_dim 32 --neighbors 10 --seed 42 --allow-year-only-source
+python scripts/evaluate_score_fusion.py
+python scripts/build_paper_results.py
 ```
 
-The audit command is read-only. Training is chronological: it selects the checkpoint and operating threshold on validation data, then evaluates the untouched test period. Outputs are written only to `--output_dir`. Smoke mode uses a deterministic synthetic panel to exercise the pipeline; its metrics are software checks, not research results.
+An optional engineered-ratio check is available with `python scripts/derive_financial_ratios.py`, then rerun the LightGBM sweep with `--data-file data/processed/uop_numeric_ratio_panel.csv --output-dir results/uop-ratio-lgbm-sweep` and `train.py` with that panel. In the recorded single-seed check, adding 12 ratios reduced LightGBM AP to 0.0827 and ROC-AUC to 0.8670.
+
+The first script audits and prepares a local panel, excluding all repeated company-years because exact filing dates are unavailable. LightGBM/XGBoost hyperparameters and score-fusion weights are chosen on validation only. The graph training command requires the explicit `--allow-year-only-source` flag to mark the result exploratory. Outputs are written under ignored `results/`; the paper tables, summary, and local experiment ledger are generated from those measured outputs. Smoke mode uses synthetic data and is never research evidence.
 
 ## Data and license
 
@@ -50,8 +56,8 @@ The original candidate benchmark is available at [sowide/bankruptcy_dataset](htt
 
 Default split years, model settings, and seed are in `configs/default.json`. The output includes `metrics.json`, `predictions.csv`, `loss_curve.png`, and `model.pt`. The runnable comparison suite includes logistic regression, decision tree, random forest, histogram gradient boosting, and MLP controls on both current-year and flattened five-year features, as well as LSTM, GCN, GraphSAGE, and the reliability-aware temporal GNN. Conventional graph baselines omit persistence weighting to isolate the proposed mechanism.
 
-The paper's hard success criterion is to beat the strongest traditional and temporal/graph baselines on held-out PR-AUC and ROC-AUC with paired company-clustered confidence intervals above zero, consistent gains across seeds and future windows, and no failure of the operating-point or calibration guardrails. A negative or mixed result does not count as success under this project's criterion. The current runner does not yet include required XGBoost/LightGBM comparisons, survival baselines, full tuning, or cluster-bootstrap confidence intervals, so the benchmark is not yet complete. See [`experiment-plan.md`](experiment-plan.md) and [`docs/comparison-framework.md`](docs/comparison-framework.md) for the rationale, full baseline list, implementation gaps, and exact pass/fail rules. Do not treat feature-similarity edges as causal links or evidence of contagion.
+The project's hard success criterion remains improvement over strong tabular and temporal/graph baselines on both AP and ROC-AUC, with paired company-clustered confidence intervals above zero and stability across multiple seeds and future windows. The current one-seed, one-window result fails this gate. Exact filing dates, survival comparisons, the full predeclared tuning budget, and multi-window replication remain outstanding. Feature-similarity edges are statistical associations, not evidence of contagion.
 
 ## Paper
 
-See `paper/paper.md` for the claim-safe manuscript scaffold, `experiment-plan.md` for the study plan, and `docs/comparison-framework.md` for the baseline matrix and non-negotiable pass/fail criterion. The workshop venue remains unselected. All results sections are intentionally marked pending until experiments run on a valid, documented event-horizon dataset.
+The complete current manuscript is [`paper/main.tex`](paper/main.tex), compiled as [`paper/main.pdf`](paper/main.pdf) with IEEEtran. `paper/paper.md` summarizes its claims and limitations. The workshop venue remains unselected; this exploratory report is not submission-ready evidence for an A* venue.

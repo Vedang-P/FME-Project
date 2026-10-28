@@ -3,4 +3,6 @@ pandas>=2.2
 scikit-learn>=1.5
 torch>=2.5
 matplotlib>=3.9
+lightgbm>=4.0
+xgboost>=3.0
 pytest>=8.0

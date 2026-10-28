@@ -17,7 +17,7 @@ Every rationale can fail. Boosted trees may capture the useful signal already; a
 
 ## Required comparison ladder
 
-The literature makes tree ensembles a high bar: a U.S. public-firm bankruptcy benchmark reports gradient-boosted trees, including XGBoost and LightGBM, as stronger than the other evaluated methods for one-year-ahead prediction. These models are therefore mandatory comparators, not optional baselines. [Alanis, Chava, and Shah](https://arxiv.org/abs/2212.12051)
+The literature makes tree ensembles a high bar: Alanis et al. report XGBoost ROC-AUC 0.92 in a U.S. public-firm walk-forward benchmark. This is a published contextual value, not a score directly comparable to the current panel's test result. XGBoost and LightGBM are mandatory local comparators, not optional baselines. [Alanis, Chava, and Shah](https://arxiv.org/abs/2212.12051)
 
 | Tier | Methods | Input views | What it controls |
 |---|---|---|---|
@@ -66,6 +66,6 @@ If any condition fails, the method has not met the required success criterion. K
 
 ## Current implementation and data status
 
-The current code runs logistic regression, decision tree, random forest, histogram gradient boosting, and MLP on current-year and flattened-history features, plus LSTM, GCN, GraphSAGE, and the proposed model. It does **not yet** implement XGBoost/LightGBM, SVM, classic financial scores, survival comparisons, systematic model search, multi-window evaluation, or the paired company-cluster bootstrap report. These remain required before the comparison is strong enough to test the gate.
+The current implementation runs the listed tabular and temporal/graph controls, plus 16-configuration LightGBM and XGBoost validation sweeps over two feature views, validation-selected tree/graph score fusion, and a paired company-cluster bootstrap (2,000 replicates). The local XGBoost result is AP 0.1141 and ROC-AUC 0.8868. The XGBoost--reliability-GNN blend is AP 0.1133 and ROC-AUC 0.8806; its paired AP difference interval includes zero and its ROC-AUC difference interval is below zero. The published XGBoost ROC-AUC of 0.92 is reported separately because its cohort and protocol differ. This is a single-seed, single-window exploratory run, not the declared full tuning budget. SVM, classic financial scores, survival methods, at least five neural seeds, multiple future windows, and a 10,000-replicate confirmatory interval remain outstanding.
 
-The candidate American Stock Market CSV has firm-level labels constant across years and lacks the verified event horizon required for this task. No baseline scores from it count as forecasting evidence, and the success gate cannot yet be evaluated. See [`docs/data-audit.md`](data-audit.md).
+The initial American Stock Market candidate has firm-level labels constant across years and does not count as forecasting evidence. The SEC-derived numeric alternative has next-year labels but no actual filing dates, so the present year-ordered evaluation is exploratory and cannot satisfy the filing-time gate. The current data details are in [`docs/uop-data-audit.md`](uop-data-audit.md). Measured results are in [`paper/experiment_results.json`](../paper/experiment_results.json) and the IEEE-formatted report is [`paper/main.pdf`](../paper/main.pdf). The proposed reliability-aware temporal GNN and its XGBoost fusion are below the local XGBoost baseline on both test metrics; the hard success gate is not met. Recent relational temporal GNN work also overlaps this architecture, so it should not be presented as novel.
