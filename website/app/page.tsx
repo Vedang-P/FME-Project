@@ -204,7 +204,7 @@ export default function Home() {
         </nav>
         <details className="mobile-nav">
           <summary>Sections</summary>
-          <nav aria-label="Page sections"><a href="#question">Overview</a><a href="#data">Data</a><a href="#model">Model</a><a href="#evaluation">Evaluation</a><a href="#results">Results</a><a href="#limits">Limits</a></nav>
+          <nav aria-label="Page sections"><a href="#question">Overview</a><a href="#data">Data</a><a href="#model">Model</a><a href="#evaluation">Evaluation</a><a href="#results">Results</a><a href="#charlie">Charlie method</a><a href="#limits">Limits</a></nav>
         </details>
         <a className="header-paper" href={paper}>Read the paper <Arrow /></a>
       </header>
@@ -212,7 +212,7 @@ export default function Home() {
       <div className="page-shell" id="top">
         <aside className="contents-rail">
           <p>IN THIS STUDY</p>
-          <a href="#question">Research question</a><a href="#data">Data and task</a><a href="#model">Model</a><a href="#evaluation">Evaluation</a><a href="#results">Results</a><a href="#limits">Limitations</a>
+          <a href="#question">Research question</a><a href="#data">Data and task</a><a href="#model">Model</a><a href="#evaluation">Evaluation</a><a href="#results">Results</a><a href="#charlie">Charlie</a><a href="#limits">Limitations</a>
           <span className="rail-rule" />
           <span className="rail-period">2008—2021</span>
           <span className="rail-caption">Fiscal-year panel</span>
@@ -224,12 +224,12 @@ export default function Home() {
             <p className="hero-deck">We test whether changing peer relationships add signal beyond firm-level financial histories and strong boosted-tree baselines.</p>
             <div className="hero-answer">
               <span className="answer-pin" />
-              <p><strong>Delta did not surpass the strongest tabular baseline on this fiscal-year holdout.</strong> XGBoost remained the strongest individual model on average precision and ROC-AUC.</p>
+              <p><strong>Delta did not surpass the strongest tabular baseline on this fiscal-year holdout.</strong> Charlie's XGBoost fusion raised AP on the later window, but its ROC-AUC interval includes zero and the earlier window is mixed.</p>
               <a href="#results" aria-label="Go to the measured results"><Arrow /></a>
             </div>
             <HeroEvidence />
             <SplitRibbon />
-            <div className="hero-meta"><span>Public SEC-derived financial data</span><span>Next-fiscal-year label</span><span>Single seed · one test window</span></div>
+            <div className="hero-meta"><span>Public SEC-derived financial data</span><span>Next-fiscal-year label</span><span>Delta: one seed · Charlie: two windows</span></div>
           </section>
 
           <section className="content-section data-section" id="data">
@@ -286,6 +286,25 @@ export default function Home() {
               <h3>Precision–recall and ROC curves</h3>
               <p>Held-out 2019–2021 curves from saved test predictions. The dashed precision–recall reference marks test prevalence.</p>
               <div className="ranking-curves-image"><img src="/ranking_curves.png" alt="Precision-recall and ROC curves for XGBoost, LightGBM, LSTM, Delta GCN plus LSTM, GraphSAGE plus LSTM, and the reliability-aware temporal GNN comparison on the held-out test predictions. The precision-recall panel includes a dashed test-prevalence line." /></div>
+            </div>
+            <div className="complete-metrics charlie-results" id="charlie">
+              <h3>Charlie: validation-selected LSTM and tree-score fusion</h3>
+              <p>Charlie scales each model's score using validation statistics, then selects the LSTM weight to maximize validation AP without reducing validation ROC-AUC below the tree model. The late-window LSTM is a four-year multi-head model with missingness channels; the earlier-window LSTM uses five-year attention. Each uses a five-seed mean score.</p>
+              <div className="charlie-figure"><img src="/charlie_comparison.png" alt="Paired company-clustered confidence intervals for AP and ROC-AUC changes after adding the LSTM score to XGBoost or LightGBM in the 2015–2016 and 2019–2021 test windows. The late XGBoost AP interval is above zero; all ROC-AUC intervals include zero." /></div>
+              <div className="table-scroll">
+                <table>
+                  <caption>Tree baseline and Charlie scores on the two fiscal-year test windows. Values are AP / ROC-AUC. Intervals show paired company-clustered differences.</caption>
+                  <thead><tr><th scope="col">Test window</th><th scope="col">Tree model, α</th><th scope="col">Tree score</th><th scope="col">Charlie score</th><th scope="col">Δ AP [95% CI]</th><th scope="col">Δ ROC-AUC [95% CI]</th></tr></thead>
+                  <tbody>
+                    <tr><th scope="row">2015–2016</th><td>XGBoost, 0.2</td><td>0.0826 / 0.8601</td><td>0.1036 / 0.8497</td><td>0.0234 [−0.0038, 0.0578]</td><td>−0.0102 [−0.0460, 0.0193]</td></tr>
+                    <tr><th scope="row">2015–2016</th><td>LightGBM, 0.8</td><td>0.0697 / 0.8536</td><td>0.0928 / 0.8580</td><td>0.0254 [−0.0552, 0.0974]</td><td>0.0045 [−0.0405, 0.0475]</td></tr>
+                    <tr><th scope="row">2019–2021</th><td>XGBoost, 0.2</td><td>0.1141 / 0.8868</td><td>0.1375 / 0.8895</td><td>0.0233 [0.0021, 0.0518]</td><td>0.0027 [−0.0021, 0.0078]</td></tr>
+                    <tr><th scope="row">2019–2021</th><td>LightGBM, 0.3</td><td>0.1116 / 0.8790</td><td>0.1300 / 0.8875</td><td>0.0175 [−0.0006, 0.0410]</td><td>0.0085 [−0.0004, 0.0193]</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="charlie-interpretation"><strong>Finding.</strong> Charlie's XGBoost fusion improves AP on the later holdout, with a paired interval above zero. Its ROC-AUC interval includes zero. Earlier-window AP intervals include zero, and XGBoost ROC-AUC falls by point estimate. These results do not establish consistent gains on both metrics.</p>
+              <p className="charlie-contribution">Contribution: an auditable test of whether a multi-head LSTM adds complementary ranking signal to strong boosted-tree scores across two fiscal-year windows. Charlie is a score-fusion procedure, not a new GNN architecture.</p>
             </div>
             <div className="result-callout"><div><span>BEST INDIVIDUAL BASELINE</span><strong>XGBoost</strong></div><p>AP 0.1141 · ROC-AUC 0.8868</p></div>
             <div className="result-callout result-callout-ours"><div><span>PROPOSED MODEL · OURS</span><strong>Delta (GCN + LSTM)</strong></div><p>AP 0.0794 · ROC-AUC 0.7708</p></div>

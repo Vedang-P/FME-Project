@@ -1,0 +1,178 @@
+{
+  "method": "Charlie",
+  "definition": "Validation-selected convex score fusion of a multi-head temporal LSTM and a boosted-tree model.",
+  "selection": {
+    "score_scaling": "Each model's score is centered by its validation median and divided by its validation 95th-minus-5th percentile range.",
+    "lstm_weight_grid": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "rule": "Maximize validation average precision subject to ROC-AUC not falling below the tree model.",
+    "test_used_for_selection": false
+  },
+  "lstm": "UOP: four-year raw-feature multi-head LSTM with missingness channels for the late window; five-seed mean score. The early window uses its validation-selected five-year multi-head attention LSTM; five-seed mean score.",
+  "availability_date_status": "Fiscal-year exploratory. Exact filing-availability dates are absent.",
+  "windows": {
+    "early": {
+      "split": {
+        "train": "2008-2012",
+        "validation": "2013-2014",
+        "test": "2015-2016"
+      },
+      "models": {
+        "xgboost": {
+          "selected_lstm_weight": 0.2,
+          "test_n": 6283,
+          "test_positives": 50,
+          "base": {
+            "average_precision": 0.08255070071692057,
+            "roc_auc": 0.8600850312850955
+          },
+          "charlie": {
+            "average_precision": 0.10359051153049521,
+            "roc_auc": 0.8497449061447135
+          },
+          "paired_difference": {
+            "average_precision": {
+              "mean_difference": 0.023365525449880586,
+              "ci95": [
+                -0.0038424004090222663,
+                0.057760644827859614
+              ],
+              "valid_replicates": 10000
+            },
+            "roc_auc": {
+              "mean_difference": -0.010152325273486787,
+              "ci95": [
+                -0.04601233778117446,
+                0.01934572189673226
+              ],
+              "valid_replicates": 10000
+            }
+          }
+        },
+        "lightgbm": {
+          "selected_lstm_weight": 0.8,
+          "test_n": 6283,
+          "test_positives": 50,
+          "base": {
+            "average_precision": 0.06965340728394431,
+            "roc_auc": 0.8535905663404459
+          },
+          "charlie": {
+            "average_precision": 0.0928408998341732,
+            "roc_auc": 0.8580202149847584
+          },
+          "paired_difference": {
+            "average_precision": {
+              "mean_difference": 0.025406889753080964,
+              "ci95": [
+                -0.05516645803510326,
+                0.09735598114091913
+              ],
+              "valid_replicates": 10000
+            },
+            "roc_auc": {
+              "mean_difference": 0.004542369580675733,
+              "ci95": [
+                -0.0405259759638254,
+                0.04749583711014227
+              ],
+              "valid_replicates": 10000
+            }
+          }
+        }
+      }
+    },
+    "late": {
+      "split": {
+        "train": "2008-2016",
+        "validation": "2017-2018",
+        "test": "2019-2021"
+      },
+      "models": {
+        "xgboost": {
+          "selected_lstm_weight": 0.2,
+          "test_n": 9032,
+          "test_positives": 64,
+          "base": {
+            "average_precision": 0.11414141437899128,
+            "roc_auc": 0.8867919268510259
+          },
+          "charlie": {
+            "average_precision": 0.13745710541449474,
+            "roc_auc": 0.8895134087867975
+          },
+          "paired_difference": {
+            "average_precision": {
+              "mean_difference": 0.02329524010480107,
+              "ci95": [
+                0.002108802985634147,
+                0.05178987826174099
+              ],
+              "valid_replicates": 10000
+            },
+            "roc_auc": {
+              "mean_difference": 0.0026970282386502577,
+              "ci95": [
+                -0.002072649843545457,
+                0.007755336204132422
+              ],
+              "valid_replicates": 10000
+            }
+          }
+        },
+        "lightgbm": {
+          "selected_lstm_weight": 0.30000000000000004,
+          "test_n": 9032,
+          "test_positives": 64,
+          "base": {
+            "average_precision": 0.11155822470797024,
+            "roc_auc": 0.8789689730151651
+          },
+          "charlie": {
+            "average_precision": 0.1299988667777256,
+            "roc_auc": 0.8874801377118644
+          },
+          "paired_difference": {
+            "average_precision": {
+              "mean_difference": 0.017526738767513615,
+              "ci95": [
+                -0.0005838657366445235,
+                0.04097867865630855
+              ],
+              "valid_replicates": 10000
+            },
+            "roc_auc": {
+              "mean_difference": 0.008503259381459561,
+              "ci95": [
+                -0.0003607523402848062,
+                0.019266971063058486
+              ],
+              "valid_replicates": 10000
+            }
+          }
+        }
+      }
+    }
+  },
+  "provenance": {
+    "aggregate_sources": [
+      "results/multihead-lstm-fusion-early/metrics.json",
+      "results/multihead-lstm-fusion/metrics.json"
+    ],
+    "evaluation_script": "scripts/evaluate_lstm_fusion.py",
+    "lstm_training_script": "scripts/run_multihead_lstm_sweep.py",
+    "raw_results_and_predictions_are_not_committed": true
+  },
+  "interpretation": "Late-window XGBoost fusion increases AP with a paired company-clustered 95% interval above zero; its ROC-AUC interval includes zero. Early-window AP intervals include zero, and XGBoost-fusion ROC-AUC is lower by point estimate. These two windows do not establish repeatable gains on both required metrics."
+}

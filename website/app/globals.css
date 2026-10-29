@@ -157,6 +157,11 @@ h2 { margin-bottom: 0; font-family: var(--serif); font-size: clamp(30px, 3.6vw, 
 .complete-metrics > p { margin: 0 0 12px; color: #4f5b55; font-size: 12px; line-height: 1.6; }
 .complete-metrics-scroll { overflow-x: auto; border: 1px solid var(--line); background: #fff; }
 .complete-metrics-scroll img { display: block; width: 100%; min-width: 1040px; height: auto; }
+.charlie-figure { overflow-x: auto; border: 1px solid var(--line); background: #fff; margin: 12px 0 16px; }
+.charlie-figure img { display: block; width: min(100%, 940px); height: auto; margin: 0 auto; }
+.charlie-results table { min-width: 900px; }
+.charlie-interpretation,.charlie-contribution { max-width: 78ch; margin: 14px 0 0; color: #4f5b55; font-size: 13px; line-height: 1.65; }
+.charlie-contribution { border-left: 2px solid var(--rust); padding-left: 13px; }
 .ranking-curves { margin-top: 28px; }
 .ranking-curves-image { overflow-x: auto; border: 1px solid var(--line); background: #fff; }
 .ranking-curves-image img { display: block; width: 100%; min-width: 720px; height: auto; }
@@ -244,6 +249,7 @@ tbody .row-ours { background: #f4eae4; color: #733a27; }
   .chart-wrap { overflow-x: auto; margin-inline: -8px; padding-inline: 8px; }
   .results-chart { min-width: 690px; }
   .complete-metrics-scroll img { min-width: 1040px; }
+  .charlie-figure img { min-width: 650px; }
   .ranking-curves-image img { min-width: 720px; }
   .result-callout { grid-template-columns: 1fr; gap: 5px; }
   .result-callout > div { flex-wrap: wrap; gap: 7px 12px; }

@@ -14,13 +14,13 @@
 \maketitle
 
 \begin{abstract}
-We propose Delta, a GCN--LSTM model that combines a firm's recent financial history with financial-peer information. We compare Delta with tabular, recurrent, graph, and score-fusion baselines on a public SEC-derived dataset using fiscal-year splits. Delta achieves average precision (AP) 0.079 and ROC-AUC 0.771. XGBoost remains the strongest individual model, with AP 0.114 and ROC-AUC 0.887. Exact filing dates are unavailable, so results are interpreted by fiscal year.
+We propose Delta, a GCN--LSTM model that combines a firm's recent financial history with financial-peer information, and evaluate Charlie, a validation-selected fusion of LSTM and boosted-tree scores. On the 2019--2021 fiscal-year holdout, Charlie with XGBoost raises average precision (AP) from 0.114 to 0.137; its ROC-AUC changes from 0.887 to 0.890. The paired company-clustered interval excludes zero for AP but includes zero for ROC-AUC. Gains are not consistent on an earlier holdout. Exact filing dates are unavailable, so these results do not establish filing-time performance.
 \end{abstract}
 
 \section{Introduction}
 Corporate bankruptcy is costly to firms, investors, employees, and lenders. Predictive models must find a small number of future events among many non-events, making average precision (AP) and recall at an operating point more informative than accuracy. Prior work on publicly traded U.S. firms reports that gradient-boosted trees are strong one-year-ahead predictors, establishing a demanding tabular baseline \cite{alanis2022benchmark}. Graph neural networks (GNNs) have also been applied to bankruptcy and distress prediction, including models that combine corporate relations with temporal encoders \cite{zhao2023comrisk,sun2026rahtgnn}.
 
-This study evaluates whether financial-peer graph messages improve bankruptcy ranking beyond firm-level temporal and boosted-tree models. Delta encodes up to five years of company features with an LSTM, then applies graph convolution over a financial-similarity peer graph. The evaluation includes tuned XGBoost and LightGBM baselines, conventional graph models, a reliability-aware temporal GNN, and validation-selected score fusion. Published results are reported separately when their datasets and evaluation protocols differ.
+This study evaluates whether financial-peer graph messages improve bankruptcy ranking beyond firm-level temporal and boosted-tree models. Delta encodes up to five years of company features with an LSTM, then applies graph convolution over a financial-similarity peer graph. We also introduce Charlie, a validation-selected score fusion that tests whether the LSTM contributes information complementary to tuned XGBoost and LightGBM models. The comparison includes conventional graph models and a reliability-aware temporal GNN. Published results are reported separately when their datasets and evaluation protocols differ. The score fusion is an empirical combination method, not a new recurrent architecture.
 
 \section{Related Work}
 Altman introduced a discriminant score for bankruptcy prediction \cite{altman1968}. Alanis \emph{et al.} benchmarked eight methods on U.S. public firms using walk-forward one-year-ahead forecasts and report ROC-AUC 0.92 for XGBoost \cite{alanis2022benchmark}. Table~\ref{tab:published} lists this result separately because the cohort, predictors, and protocol differ from those used here. Zhao \emph{et al.} combine intra-risk and contagion-risk signals with graph learning \cite{zhao2023comrisk}. Sun \emph{et al.} combine relation-specific graph convolution, relation attention, temporal encoding, and score fusion for distress prediction \cite{sun2026rahtgnn}. These studies establish temporal and relational graph learning as prior approaches to financial distress prediction.
@@ -64,11 +64,18 @@ Each relation channel computes a weighted mean of neighboring temporal states. A
 \label{fig:method}
 \end{figure*}
 
-\subsection{Validation-Selected Score Fusion}
+\subsection{Graph Score Fusion Baselines}
 We transform the tree and graph scores with robust location/scale parameters fitted on validation data, then evaluate convex combinations $q=(1-\alpha)q_{\mathrm{tree}}+\alpha q_{\mathrm{graph}}$ for $\alpha\in\{0,0.1,\ldots,1\}$. We choose the combination with highest validation AP subject to validation ROC-AUC not falling below the tree score. The same validation-only rule selects $\alpha=0.2$ for LightGBM--GraphSAGE, $\alpha=0.1$ for LightGBM--reliability-GNN, and $\alpha=0.1$ for XGBoost--reliability-GNN. XGBoost--GCN and XGBoost--GraphSAGE select $\alpha=0$, so validation does not support adding either message-passing score under this rule.
 
+\subsection{Charlie: LSTM--GBDT Score Fusion}
+Charlie combines the multi-head LSTM score with a boosted-tree score. For each model, we center scores at the validation median and divide by the validation 95th-to-5th percentile range. For the tree and LSTM scores $z_{\mathrm{tree}}$ and $z_{\mathrm{LSTM}}$, Charlie computes
+\begin{equation}
+ q_{\mathrm{Charlie}}=(1-\alpha)z_{\mathrm{tree}}+\alpha z_{\mathrm{LSTM}}.
+\end{equation}
+We select $\alpha$ from $\{0,0.1,\ldots,1\}$ by validation AP, subject to validation ROC-AUC being no lower than the tree model. The late window uses the validation-selected four-year raw-feature multi-head LSTM with missingness channels; the early window uses a five-year multi-head attention LSTM. Both LSTM scores average five final seeds. We apply validation-fitted scaling and the selected weight to test scores without using test labels. Since this is score fusion, Charlie is evaluated as a ranking method and has no Brier score.
+
 \subsection{Metrics and Uncertainty}
-AP is the primary metric and ROC-AUC is co-required. We also report Brier score for individual probability models and precision/recall at a threshold chosen on validation to target 80\% recall. Fused standardized scores are rankings, not calibrated probabilities; we do not report Brier scores for them. Paired 95\% confidence intervals compare test predictions by resampling companies with replacement and retaining all test-year rows for each sampled company (2,000 valid replicates). One training seed (42) and one future test window are available, so this interval does not capture seed or period variability.
+AP is the primary metric and ROC-AUC is co-required. We also report Brier score for individual probability models and precision/recall at a threshold chosen on validation to target 80\% recall. Fused standardized scores are rankings, not calibrated probabilities; we do not report Brier scores for them. Paired 95\% confidence intervals compare test predictions by resampling companies with replacement and retaining all test-year rows for each sampled company. Existing graph-fusion comparisons use 2,000 replicates; Charlie comparisons use 10,000. Intervals do not capture seed or period variability.
 
 \section{Experimental Results}
 \begin{figure*}[t]
@@ -87,19 +94,30 @@ AP is the primary metric and ROC-AUC is co-required. We also report Brier score 
 
 \input{results_table.tex}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/charlie_comparison.pdf}
+\caption{Paired company-clustered changes in AP and ROC-AUC after adding the LSTM score to XGBoost or LightGBM. Points show mean differences and bars show 95\% bootstrap intervals.}
+\label{fig:charlie}
+\end{figure*}
+
+\input{charlie_results.tex}
+
 Table~\ref{tab:published} preserves the published XGBoost benchmark value. It is context only, not a matched test-set result.
 \input{published_benchmark_table.tex}
 
-XGBoost is the strongest individual baseline in this evaluation on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. Delta achieves AP 0.0794 and ROC-AUC 0.7708. Its AP is 0.0086 higher than the LSTM's, while its ROC-AUC is 0.0032 lower. The reliability-aware temporal GNN comparator achieves AP 0.0383 and ROC-AUC 0.7515. Each neural model uses one training seed. Figure~\ref{fig:metrics} visualizes every reported table metric, while Figure~\ref{fig:curves} shows ranking curves for the tabular baselines and temporal graph models.
+XGBoost is the strongest individual baseline in this evaluation on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. Delta achieves AP 0.0794 and ROC-AUC 0.7708. Its AP is 0.0086 higher than the LSTM's, while its ROC-AUC is 0.0032 lower. The reliability-aware temporal GNN comparator achieves AP 0.0383 and ROC-AUC 0.7515. The graph-model comparisons use one training seed; Charlie uses five-seed mean LSTM scores. Figure~\ref{fig:metrics} visualizes every metric in the main comparison, while Figure~\ref{fig:curves} shows ranking curves for the tabular baselines and temporal graph models.
 
 The validation-selected LightGBM--GraphSAGE blend increases test AP from 0.1116 to 0.1181, while ROC-AUC decreases from 0.8790 to 0.8705. The paired company-clustered AP difference is 0.00515 with 95\% interval [--0.00285, 0.01913]; the ROC-AUC difference is --0.00869 [--0.01783, --0.00065]. For XGBoost, validation selects a GNN weight of 0.1. The fused test AP is 0.1133 and ROC-AUC is 0.8806, compared with 0.1141 and 0.8868 for XGBoost alone. The paired AP-difference interval is [--0.01363, 0.01493], and the ROC-AUC difference is --0.00626 [--0.01558, --0.00037].
+
+Charlie with XGBoost increases AP from 0.1141 to 0.1375 on the 2019--2021 holdout, with a paired mean difference of 0.0233 and 95\% interval [0.0021, 0.0518]. ROC-AUC changes from 0.8868 to 0.8895; its paired interval, [--0.0021, 0.0078], includes zero. Charlie with LightGBM reaches AP 0.1300 and ROC-AUC 0.8875, but the paired intervals include zero for both metrics. On the earlier 2015--2016 holdout, AP increases for both tree models by point estimate, but both AP intervals include zero. XGBoost--Charlie ROC-AUC decreases from 0.8601 to 0.8497, and all earlier-window ROC-AUC intervals include zero. Figure~\ref{fig:charlie} and Table~\ref{tab:charlie} report paired changes and both fiscal-year windows. These repeated observations are exploratory because the same dataset and model-development process informed both windows.
 
 An additional diagnostic adds 12 conventional financial ratios to the 34 source features. Ratio-augmented LightGBM scores AP 0.0827 and ROC-AUC 0.8670. The ratio-augmented reliability-GNN scores AP 0.0286.
 
 The originating dataset thesis reports AP 0.08 and ROC-AUC 0.87 for its raw numeric XBRL representation, and AP 0.30 and ROC-AUC 0.82 for its text FinBERT system \cite{potiriadis2026}. These results use the unreduced filing cohort and are included as source-reported context.
 
 \section{Conclusion}
-Delta combines an LSTM representation of firm history with graph convolution over financial-similarity peers. Among individual models, XGBoost achieved the highest AP and ROC-AUC. Delta's AP exceeded that of the LSTM, while its ROC-AUC was slightly lower. The reliability-aware temporal GNN and its fusion with XGBoost scored below the tree model alone. The LightGBM--GraphSAGE blend had the highest AP point estimate but lower ROC-AUC than LightGBM; its paired AP confidence interval includes zero. Exact filing dates were unavailable, so these comparisons use fiscal-year ordering.
+Delta combines an LSTM representation of firm history with graph convolution over financial-similarity peers. Charlie tests whether a validation-selected LSTM score adds signal to boosted-tree rankings. The late-window XGBoost fusion improves AP by point estimate and its paired interval excludes zero, while its ROC-AUC interval includes zero. Earlier-window gains are uncertain and the XGBoost fusion has lower ROC-AUC by point estimate. The experiments therefore do not establish consistent improvement on both required metrics. Exact filing dates were unavailable, so the comparisons use fiscal-year ordering.
 
 \FloatBarrier
 \bibliographystyle{IEEEtran}
