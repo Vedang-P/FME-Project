@@ -6,6 +6,7 @@
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{microtype}
+\usepackage{placeins}
 \renewenvironment{abstract}{\small\noindent\textbf{Abstract.}\ }{\par\smallskip}
 \title{Temporal Graph Models for Bankruptcy Prediction: A Fiscal-Year Evaluation}
 \author{\IEEEauthorblockN{Atharv Shanker, Vedang Pandey, and Shoumik Mitra}}
@@ -13,13 +14,13 @@
 \maketitle
 
 \begin{abstract}
-We propose a reliability-aware temporal graph neural network that combines a firm's financial history with changing financial-peer links. We compare it with tabular, recurrent, and graph models on a public SEC-derived dataset using fiscal-year splits. XGBoost performs best among individual models, with average precision (AP) 0.114 and ROC-AUC 0.887. The proposed model scores 0.038 AP and 0.752 ROC-AUC. Fusing it with XGBoost does not improve on the tree model. Missing filing dates limit interpretation to fiscal-year evaluation.
+We propose Delta, a GCN--LSTM model that combines a firm's recent financial history with financial-peer information. We compare Delta with tabular, recurrent, graph, and score-fusion baselines on a public SEC-derived dataset using fiscal-year splits. Delta achieves average precision (AP) 0.079 and ROC-AUC 0.771. XGBoost remains the strongest individual model, with AP 0.114 and ROC-AUC 0.887. Exact filing dates are unavailable, so results are interpreted by fiscal year.
 \end{abstract}
 
 \section{Introduction}
 Corporate bankruptcy is costly to firms, investors, employees, and lenders. Predictive models must find a small number of future events among many non-events, making average precision (AP) and recall at an operating point more informative than accuracy. Prior work on publicly traded U.S. firms reports that gradient-boosted trees are strong one-year-ahead predictors, establishing a demanding tabular baseline \cite{alanis2022benchmark}. Graph neural networks (GNNs) have also been applied to bankruptcy and distress prediction, including models that combine corporate relations with temporal encoders \cite{zhao2023comrisk,sun2026rahtgnn}.
 
-This study evaluates whether financial-peer graph messages improve bankruptcy ranking beyond firm-level temporal and boosted-tree models. The graph model encodes up to five years of company features with an LSTM and aggregates messages over relation-specific financial-similarity graphs. The evaluation includes tuned XGBoost and LightGBM baselines, conventional graph models, and validation-selected score fusion. Published results are reported separately when their datasets and evaluation protocols differ.
+This study evaluates whether financial-peer graph messages improve bankruptcy ranking beyond firm-level temporal and boosted-tree models. Delta encodes up to five years of company features with an LSTM, then applies graph convolution over a financial-similarity peer graph. The evaluation includes tuned XGBoost and LightGBM baselines, conventional graph models, a reliability-aware temporal GNN, and validation-selected score fusion. Published results are reported separately when their datasets and evaluation protocols differ.
 
 \section{Related Work}
 Altman introduced a discriminant score for bankruptcy prediction \cite{altman1968}. Alanis \emph{et al.} benchmarked eight methods on U.S. public firms using walk-forward one-year-ahead forecasts and report ROC-AUC 0.92 for XGBoost \cite{alanis2022benchmark}. Table~\ref{tab:published} lists this result separately because the cohort, predictors, and protocol differ from those used here. Zhao \emph{et al.} combine intra-risk and contagion-risk signals with graph learning \cite{zhao2023comrisk}. Sun \emph{et al.} combine relation-specific graph convolution, relation attention, temporal encoding, and score fusion for distress prediction \cite{sun2026rahtgnn}. These studies establish temporal and relational graph learning as prior approaches to financial distress prediction.
@@ -46,7 +47,10 @@ We train on fiscal years 2008--2016, select models and fusion weights on 2017--2
 \subsection{Preprocessing and Strong Tabular Baselines}
 Numeric features are converted to finite values, winsorized at the training-set 1st and 99th percentiles, median-imputed, and scaled by the training interquartile range. All transformation parameters are fitted on training years. We compare logistic regression, decision tree, random forest, histogram gradient boosting, MLP, LSTM, GCN, GraphSAGE, reliability-aware temporal GNN, LightGBM, and XGBoost. For each GBDT family we evaluate eight declared configurations on both the most recent-year input and flattened five-year history (16 validation trials), then select by validation AP. LightGBM selects 300 trees, learning rate 0.03, seven leaves, maximum depth four, 20 minimum child samples, and $\ell_2$ penalty 1.0, with balanced class weighting. XGBoost selects depth two, learning rate 0.03, 300 trees, minimum child weight 10, $\ell_2$ penalty 1.0, row and feature subsampling 0.8, and training-set positive-class weighting.
 
-\subsection{Reliability-Aware Temporal GNN}
+\subsection{Delta: GCN with an LSTM Encoder}
+Delta encodes a trailing sequence of up to five annual feature vectors for firm $i$ through an LSTM, producing state $\mathbf{h}_{i,t}$. At prediction year $t$, we construct a $k$-nearest-neighbor financial-similarity graph ($k=10$) from the standardized financial features. The graph convolution combines each firm's temporal state with the similarity-weighted mean of its neighbors' states, followed by a binary classifier for next-year bankruptcy. Delta uses the conventional peer graph without relation-persistence weighting. Financial-similarity links represent predictive associations, not causal or contagion relationships.
+
+\subsection{Reliability-Aware Temporal GNN Comparator}
 For firm $i$ in year $t$, an LSTM maps a trailing sequence of up to five annual feature vectors to state $\mathbf{h}_{i,t}$. For each financial feature group $r$, we construct a directed $k$-nearest-neighbor graph ($k=10$) using cosine similarity of the corresponding standardized features in year $t$. For edge $(j,i)$, the base weight is $s_{ji,t}=\max(0.01,1-d_{\cos}(\mathbf{x}_{j,t},\mathbf{x}_{i,t}))$. We down-weight unstable neighborhoods using the Jaccard overlap $p_{i,t}$ between firm $i$'s peer sets in adjacent snapshots:
 \begin{equation}
  w_{ji,t}^{(r)} = s_{ji,t}^{(r)}\left(0.5+0.5p_{i,t}^{(r)}\right).
@@ -56,7 +60,7 @@ Each relation channel computes a weighted mean of neighboring temporal states. A
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.96\textwidth]{figures/method_overview.pdf}
-\caption{Overview of the proposed reliability-aware temporal GNN. Up to five annual feature vectors are encoded for each firm. Year-specific financial-similarity graphs provide relation messages, with edge reliability adjusted by peer-set persistence before gated aggregation.}
+\caption{Delta combines an LSTM encoding of up to five annual financial vectors with graph convolution over the financial-similarity peer graph at year $t$. The GCN combines a firm's temporal state with a similarity-weighted mean of peer states before predicting distress risk.}
 \label{fig:method}
 \end{figure*}
 
@@ -77,7 +81,7 @@ AP is the primary metric and ROC-AUC is co-required. We also report Brier score 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.82\textwidth]{figures/ranking_curves.pdf}
-\caption{Precision--recall and ROC curves for the strongest tabular baselines, LSTM, GCN--LSTM, and the proposed reliability-aware temporal GNN on the held-out years. The dashed line in the precision--recall panel marks test prevalence. Curves use saved test-set predictions.}
+\caption{Precision--recall and ROC curves for the strongest tabular baselines, LSTM, Delta (GCN--LSTM), GraphSAGE--LSTM, and the reliability-aware temporal GNN comparator on the held-out years. The dashed line in the precision--recall panel marks test prevalence. Curves use saved test-set predictions.}
 \label{fig:curves}
 \end{figure*}
 
@@ -86,7 +90,7 @@ AP is the primary metric and ROC-AUC is co-required. We also report Brier score 
 Table~\ref{tab:published} preserves the published XGBoost benchmark value. It is context only, not a matched test-set result.
 \input{published_benchmark_table.tex}
 
-XGBoost is the strongest individual baseline in this evaluation on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. Our proposed reliability-aware temporal GNN scores 0.0758 lower in AP and 0.1353 lower in ROC-AUC. GCN improves AP over the LSTM by 0.0086, while its ROC-AUC is lower. Each neural model uses one training seed. Figure~\ref{fig:metrics} visualizes every reported table metric, while Figure~\ref{fig:curves} shows the corresponding ranking curves for representative models.
+XGBoost is the strongest individual baseline in this evaluation on both AP and ROC-AUC, with AP 0.1141 and ROC-AUC 0.8868. Delta achieves AP 0.0794 and ROC-AUC 0.7708. Its AP is 0.0086 higher than the LSTM's, while its ROC-AUC is 0.0032 lower. The reliability-aware temporal GNN comparator achieves AP 0.0383 and ROC-AUC 0.7515. Each neural model uses one training seed. Figure~\ref{fig:metrics} visualizes every reported table metric, while Figure~\ref{fig:curves} shows ranking curves for the tabular baselines and temporal graph models.
 
 The validation-selected LightGBM--GraphSAGE blend increases test AP from 0.1116 to 0.1181, while ROC-AUC decreases from 0.8790 to 0.8705. The paired company-clustered AP difference is 0.00515 with 95\% interval [--0.00285, 0.01913]; the ROC-AUC difference is --0.00869 [--0.01783, --0.00065]. For XGBoost, validation selects a GNN weight of 0.1. The fused test AP is 0.1133 and ROC-AUC is 0.8806, compared with 0.1141 and 0.8868 for XGBoost alone. The paired AP-difference interval is [--0.01363, 0.01493], and the ROC-AUC difference is --0.00626 [--0.01558, --0.00037].
 
@@ -95,8 +99,9 @@ An additional diagnostic adds 12 conventional financial ratios to the 34 source 
 The originating dataset thesis reports AP 0.08 and ROC-AUC 0.87 for its raw numeric XBRL representation, and AP 0.30 and ROC-AUC 0.82 for its text FinBERT system \cite{potiriadis2026}. These results use the unreduced filing cohort and are included as source-reported context.
 
 \section{Conclusion}
-XGBoost achieved the highest individual AP and ROC-AUC among the evaluated models. The reliability-aware temporal GNN scored lower on both metrics, and its fusion with XGBoost also scored below the tree model alone. The LightGBM--GraphSAGE blend increased AP but decreased ROC-AUC, with an AP confidence interval that includes zero. Exact filing dates were unavailable, so these comparisons use fiscal-year ordering.
+Delta combines an LSTM representation of firm history with graph convolution over financial-similarity peers. Among individual models, XGBoost achieved the highest AP and ROC-AUC. Delta's AP exceeded that of the LSTM, while its ROC-AUC was slightly lower. The reliability-aware temporal GNN and its fusion with XGBoost scored below the tree model alone. The LightGBM--GraphSAGE blend had the highest AP point estimate but lower ROC-AUC than LightGBM; its paired AP confidence interval includes zero. Exact filing dates were unavailable, so these comparisons use fiscal-year ordering.
 
+\FloatBarrier
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 \end{document}

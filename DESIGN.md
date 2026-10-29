@@ -78,7 +78,7 @@ components:
 
 Economic Atlas treats a research page like a field guide to evidence: survey-ink blue-black type sits on warm map-stock, with fine rules and carefully labeled marks giving structure to the reading path. The desktop composition pairs a slim contents legend with a calm article column. On small screens, the legend yields to a compact section menu and wide evidence regions remain scrollable so their labels and comparisons stay intact.
 
-The visual language is factual and restrained. Green, blue, ochre, and rust distinguish actual data splits, model families, or the proposed model; every mark is explained by a nearby label or legend. The page leads with a plain account of the measured outcome: XGBoost is the best individual baseline, and the proposed temporal GNN marked “(Ours)” scores lower in this local fiscal-year evaluation. Source-reported results from another cohort remain separately labeled from local measurements.
+The visual language is factual and restrained. Green, blue, ochre, and rust distinguish actual data splits, model families, or the proposed model; every mark is explained by a nearby label or legend. The page leads with a plain account of the measured outcome: XGBoost is the best individual baseline, and Delta (GCN+LSTM), marked “(Ours),” scores lower in this local fiscal-year evaluation. The reliability-aware temporal GNN remains a comparison. Source-reported results from another cohort remain separately labeled from local measurements.
 
 **Key Characteristics:**
 - Warm paper surfaces, survey-ink type, and thin map-like dividers.
@@ -97,7 +97,7 @@ The palette is warm and low-glare, with survey-ink for primary text and muted da
 
 ### Secondary
 - **Peer Green** (`#3e806e`): Green-coded model and method marks; paired with its pale wash for diagram nodes.
-- **Muted Blue-Gray** (`#4e6683`): The blue-gray gated-message node; its pale lilac wash is `#eee8f2`.
+- **Muted Blue-Gray** (`#4e6683`): The blue-gray GCN aggregation node; its pale lilac wash is `#eee8f2`.
 - **Validation Ochre** (`#d39a48`): The validation period in the year split.
 
 ### Neutral
@@ -159,7 +159,7 @@ These are text links, not buttons. They use Test Rust, a thin underline, compact
 Fourteen years are arranged from 2008 through 2021. Sage, ochre, and rust bottom rules map the training, validation, and test periods, with a compact mono legend spelling out each range. Preserve the key and its labels whenever the year marks are reused.
 
 ### Evidence charts and method map
-Results are plotted as factual points and fine chart tracks, with metric scales, values, and explanatory notes visible. Blue, green, rust, ochre, and other muted hues distinguish existing model groups. The proposed model is explicitly labeled “(Ours)” and rust-highlighted; the chart and nearby prose state that it is below XGBoost. The method map uses softly tinted, outlined SVG nodes with thin directional lines and an explicit caveat that peer links are statistical associations, not causal relationships. On mobile, both regions scroll horizontally.
+Results are plotted as factual points and fine chart tracks, with metric scales, values, and explanatory notes visible. Blue, green, rust, ochre, and other muted hues distinguish existing model groups. Delta is explicitly labeled “(Ours)” and rust-highlighted; the chart and nearby prose state that it is below XGBoost. The method map shows an LSTM state and peer graph entering GCN aggregation, with an explicit caveat that peer links are statistical associations, not causal relationships. Precision–recall and ROC curves use the saved held-out predictions. On mobile, evidence regions scroll horizontally.
 
 ### Results table
 The complete metrics table uses tabular numeric columns, mono column headings, thin horizontal rules, and an overflow-x scroll region. Its caption names the fiscal-year test window and thresholding context. The proposed-model row has a pale rust wash and dark rust text. Keep it readable without implying that it outranks the stronger baselines.
@@ -169,7 +169,7 @@ The complete metrics table uses tabular numeric columns, mono column headings, t
 ### Do:
 - **Do** use Map Stock and Bright Stock as the page and article surfaces, with Survey Ink for the primary text.
 - **Do** label each data color with its year split or model-family meaning in a slim legend or adjacent copy.
-- **Do** state clearly that XGBoost is the best individual baseline and the proposed “(Ours)” model is lower in this local evaluation.
+- **Do** state clearly that XGBoost is the best individual baseline and Delta (GCN+LSTM), marked “(Ours),” is lower in this local evaluation.
 - **Do** preserve the source-reported versus locally measured distinction in charts, captions, and prose.
 - **Do** keep mobile charts and tables in their existing horizontal scroll regions.
 - **Do** retain visible keyboard focus, the readable article measure, and the reduced-motion behavior.

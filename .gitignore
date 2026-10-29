@@ -10,6 +10,10 @@ results/**
 !results/.gitkeep
 .DS_Store
 .rstack/
+.codex/
+.cursor/
+.gemini/
+.impeccable/build/
 paper/*.aux
 paper/*.bbl
 paper/*.blg

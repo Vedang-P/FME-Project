@@ -9,9 +9,9 @@ const results = [
   { name: "Histogram gradient boosting", note: "Last-year inputs", ap: 0.0546, auc: 0.8028, group: "baseline" },
   { name: "MLP", note: "Flattened five-year history", ap: 0.0589, auc: 0.8154, group: "neural" },
   { name: "LSTM", note: "Five-year sequence", ap: 0.0708, auc: 0.7740, group: "neural" },
-  { name: "GCN + LSTM", note: "Financial peer graph", ap: 0.0794, auc: 0.7708, group: "graph" },
+  { name: "Delta (GCN + LSTM)", note: "Proposed model · financial peer graph", ap: 0.0794, auc: 0.7708, group: "ours", featured: true },
   { name: "GraphSAGE + LSTM", note: "Financial peer graph", ap: 0.0698, auc: 0.7649, group: "graph" },
-  { name: "Reliability-aware temporal GNN", note: "Our proposed model", ap: 0.0383, auc: 0.7515, group: "ours", featured: true },
+  { name: "Reliability-aware temporal GNN", note: "Graph-model comparison", ap: 0.0383, auc: 0.7515, group: "graph" },
   { name: "LightGBM + GraphSAGE", note: "Validation-selected score fusion", ap: 0.1181, auc: 0.8705, group: "fusion", featured: true },
   { name: "LightGBM + reliability GNN", note: "Validation-selected score fusion", ap: 0.1127, auc: 0.8688, group: "fusion" },
   { name: "XGBoost + reliability GNN", note: "Validation-selected score fusion", ap: 0.1133, auc: 0.8806, group: "fusion" },
@@ -24,9 +24,9 @@ const metrics = [
   { name: "Histogram gradient boosting", ap: "0.0546", auc: "0.8028", brier: "0.0418", precision: "0.0204", recall: "0.8594", label: "Baseline" },
   { name: "MLP", ap: "0.0589", auc: "0.8154", brier: "0.1846", precision: "0.0118", recall: "0.8281", label: "Neural" },
   { name: "LSTM", ap: "0.0708", auc: "0.7740", brier: "0.2067", precision: "0.0110", recall: "0.8750", label: "Temporal" },
-  { name: "GCN + LSTM", ap: "0.0794", auc: "0.7708", brier: "0.1701", precision: "0.0112", recall: "0.8281", label: "Graph" },
+  { name: "Delta (GCN + LSTM)", ap: "0.0794", auc: "0.7708", brier: "0.1701", precision: "0.0112", recall: "0.8281", label: "Ours" },
   { name: "GraphSAGE + LSTM", ap: "0.0698", auc: "0.7649", brier: "0.1782", precision: "0.0113", recall: "0.8750", label: "Graph" },
-  { name: "Reliability-aware temporal GNN", ap: "0.0383", auc: "0.7515", brier: "0.2162", precision: "0.0120", recall: "0.7812", label: "Ours" },
+  { name: "Reliability-aware temporal GNN", ap: "0.0383", auc: "0.7515", brier: "0.2162", precision: "0.0120", recall: "0.7812", label: "Graph" },
   { name: "LightGBM + GraphSAGE", ap: "0.1181", auc: "0.8705", brier: "—", precision: "0.0252", recall: "0.8125", label: "Fusion" },
   { name: "LightGBM + reliability GNN", ap: "0.1127", auc: "0.8688", brier: "—", precision: "0.0248", recall: "0.8125", label: "Fusion" },
   { name: "XGBoost + reliability GNN", ap: "0.1133", auc: "0.8806", brier: "—", precision: "0.0256", recall: "0.8438", label: "Fusion" },
@@ -35,7 +35,7 @@ const metrics = [
 const heroResults = [
   { name: "XGBoost", note: "Best individual baseline", ap: 0.1141, auc: 0.8868, ours: false },
   { name: "LightGBM", note: "Boosted-tree baseline", ap: 0.1116, auc: 0.8790, ours: false },
-  { name: "Reliability-aware temporal GNN", note: "(Ours)", ap: 0.0383, auc: 0.7515, ours: true },
+  { name: "Delta (GCN + LSTM)", note: "(Ours)", ap: 0.0794, auc: 0.7708, ours: true },
 ];
 
 function Arrow() {
@@ -96,17 +96,14 @@ function MethodMap() {
   return (
     <div className="method-map">
       <svg viewBox="0 0 920 390" role="img" aria-labelledby="method-title method-desc">
-        <title id="method-title">Reliability-aware temporal graph model</title>
-        <desc id="method-desc">Up to five years of firm financial features feed an LSTM. At each year, financial similarity graphs provide relation-specific messages, weighted by similarity and peer-set persistence. A gate combines graph messages with the firm's temporal state to estimate distress risk.</desc>
+        <title id="method-title">Delta GCN and LSTM model</title>
+        <desc id="method-desc">Up to five years of firm financial features feed an LSTM encoder. A contemporaneous financial-similarity peer graph and the firm's LSTM state enter graph convolution, which combines the firm's state with a similarity-weighted mean of peer states to estimate distress risk.</desc>
         <defs>
           <marker id="arrow-ink" markerWidth="8" markerHeight="8" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7Z" fill="#68746c" /></marker>
-          <marker id="arrow-rust" markerWidth="8" markerHeight="8" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7Z" fill="#a14d35" /></marker>
         </defs>
         <path className="map-arrow" d="M180 180H255" markerEnd="url(#arrow-ink)" />
         <path className="map-arrow" d="M420 180H555" markerEnd="url(#arrow-ink)" />
         <path className="map-arrow map-arrow-blue" d="M515 92L590 130" markerEnd="url(#arrow-ink)" />
-        <path className="map-arrow map-arrow-rust" d="M515 275L590 222" markerEnd="url(#arrow-rust)" />
-        <path className="map-arrow map-arrow-rust" d="M440 244V151" markerEnd="url(#arrow-rust)" />
         <path className="map-arrow" d="M735 180H795" markerEnd="url(#arrow-ink)" />
         <g className="map-node map-node-green">
           <rect x="24" y="125" width="156" height="110" rx="11" />
@@ -122,21 +119,15 @@ function MethodMap() {
         </g>
         <g className="map-node map-node-blue">
           <rect x="335" y="26" width="180" height="100" rx="11" />
-          <text className="map-title" x="425" y="62">Financial peers</text>
+          <text className="map-title" x="425" y="62">Peer graph at year t</text>
           <text className="map-copy" x="425" y="88">Liquidity · solvency</text>
           <text className="map-copy" x="425" y="108">profitability · cash flow</text>
         </g>
-        <g className="map-node map-node-rust">
-          <rect x="335" y="244" width="180" height="100" rx="11" />
-          <text className="map-title" x="425" y="280">Link reliability</text>
-          <text className="map-copy" x="425" y="306">Similarity weighted by</text>
-          <text className="map-copy" x="425" y="326">peer-set persistence</text>
-        </g>
         <g className="map-node map-node-violet">
           <rect x="590" y="125" width="145" height="110" rx="11" />
-          <text className="map-title" x="662" y="163">Gated messages</text>
-          <text className="map-copy" x="662" y="190">Relation-specific</text>
-          <text className="map-copy" x="662" y="210">aggregation</text>
+          <text className="map-title" x="662" y="163">GCN aggregation</text>
+          <text className="map-copy" x="662" y="190">Self state + weighted</text>
+          <text className="map-copy" x="662" y="210">peer-state mean</text>
         </g>
         <g className="map-node map-node-ink">
           <rect x="795" y="125" width="100" height="110" rx="11" />
@@ -146,7 +137,7 @@ function MethodMap() {
         </g>
         <text className="map-foot" x="460" y="379">Peer links are statistical associations, not causal or contagion relationships.</text>
       </svg>
-      <p className="figure-note">Conceptual data flow from the implemented model. Peer sets are rebuilt at each fiscal-year snapshot; scroll sideways on small screens to follow the complete chain.</p>
+      <p className="figure-note">Delta uses the LSTM firm state and the year-specific peer graph as two inputs to GCN aggregation. Scroll sideways on small screens to follow the complete chain.</p>
     </div>
   );
 }
@@ -162,7 +153,7 @@ function ResultsChart() {
     <div className="chart-wrap">
       <svg className="results-chart" viewBox={`0 0 1220 ${items.length * row + 78}`} role="img" aria-labelledby="results-title results-desc">
         <title id="results-title">Average precision and ROC-AUC for all evaluated models</title>
-        <desc id="results-desc">XGBoost is the strongest individual baseline on both metrics. The proposed reliability-aware temporal GNN is below the boosted-tree baselines.</desc>
+        <desc id="results-desc">XGBoost is the strongest individual baseline on both metrics. Delta, the proposed GCN and LSTM model, is shown alongside all baselines and fusion models; the reliability-aware temporal GNN remains a comparison.</desc>
         <text className="chart-head" x={start} y="24">Average precision · higher is better</text>
         <text className="chart-head" x={aucStart} y="24">ROC-AUC · higher is better</text>
         {[0, 0.05, 0.10, 0.15].map((tick) => <g key={`ap-${tick}`}><line className="chart-grid" x1={start + (tick / 0.15) * width} x2={start + (tick / 0.15) * width} y1="46" y2={items.length * row + 50} /><text className="chart-tick" x={start + (tick / 0.15) * width} y="43">{tick.toFixed(2)}</text></g>)}
@@ -171,7 +162,7 @@ function ResultsChart() {
           const y = index * row + 70;
           const color = item.group === "tree" ? "#287b8e" : item.group === "ours" ? "#a14d35" : item.group === "graph" ? "#3e806e" : item.group === "fusion" ? "#b77a3b" : item.group === "neural" ? "#688d78" : "#68746c";
           return <g className={`chart-row ${item.featured ? "chart-row-featured" : ""}`} key={item.name}>
-            <text className="chart-model" x="0" y={y + 4}>{item.name}{item.name === "XGBoost" ? " · best individual baseline" : item.name === "LightGBM + GraphSAGE" ? " · highest AP" : item.name === "Reliability-aware temporal GNN" ? " · (Ours)" : ""}</text>
+            <text className="chart-model" x="0" y={y + 4}>{item.name}{item.name === "XGBoost" ? " · best individual baseline" : item.name === "LightGBM + GraphSAGE" ? " · highest AP" : item.name === "Delta (GCN + LSTM)" ? " · (Ours)" : ""}</text>
             <text className="chart-note" x="0" y={y + 17}>{item.note}</text>
             <line className="chart-track" x1={start} x2={start + width} y1={y} y2={y} />
             <line className="chart-track" x1={aucStart} x2={aucStart + aucWidth} y1={y} y2={y} />
@@ -233,7 +224,7 @@ export default function Home() {
             <p className="hero-deck">We test whether changing peer relationships add signal beyond firm-level financial histories and strong boosted-tree baselines.</p>
             <div className="hero-answer">
               <span className="answer-pin" />
-              <p><strong>In this fiscal-year holdout, they did not.</strong> XGBoost remained the strongest individual baseline. Our proposed temporal GNN did not improve on it.</p>
+              <p><strong>Delta did not surpass the strongest tabular baseline on this fiscal-year holdout.</strong> XGBoost remained the strongest individual model on average precision and ROC-AUC.</p>
               <a href="#results" aria-label="Go to the measured results"><Arrow /></a>
             </div>
             <HeroEvidence />
@@ -261,12 +252,12 @@ export default function Home() {
 
           <section className="content-section model-section" id="model">
             <div className="section-heading"><h2>What the model adds</h2></div>
-            <p className="section-lede">Our proposed model represents a firm's recent history and its position among financial peers at each year.</p>
+            <p className="section-lede">We propose Delta, a GCN+LSTM model that represents a firm's recent financial history and its position among financial peers.</p>
             <MethodMap />
             <div className="method-notes">
               <div><h3>Temporal state</h3><p>An LSTM encodes up to five annual feature vectors into a firm representation.</p></div>
-              <div><h3>Peer relations</h3><p>Separate similarity graphs capture liquidity, solvency, and profitability or cash-flow structure.</p></div>
-              <div><h3>Link reliability</h3><p>Cosine similarity is adjusted using peer-set overlap between successive graph snapshots.</p></div>
+              <div><h3>Financial peer graph</h3><p>Contemporaneous similarity links connect firms with similar financial profiles.</p></div>
+              <div><h3>Graph convolution</h3><p>Delta combines each firm's temporal state with the similarity-weighted mean of its peers' states.</p></div>
             </div>
           </section>
 
@@ -284,16 +275,21 @@ export default function Home() {
 
           <section className="content-section results-section" id="results">
             <div className="section-heading"><h2>What the results show</h2></div>
-            <p className="section-lede">The best individual baseline is XGBoost. The proposed reliability-aware temporal GNN is weaker on both headline ranking metrics.</p>
+            <p className="section-lede">The best individual baseline is XGBoost. Delta improves average precision over the LSTM but remains below the strongest tabular baselines.</p>
             <ResultsChart />
             <div className="complete-metrics">
               <h3>Every metric in one view</h3>
               <p>All five test metrics for every model in the results table. Each panel uses its own scale; lower Brier score is better.</p>
-              <div className="complete-metrics-scroll"><img src="/heldout_metrics.png" alt="Five aligned dot plots compare average precision, ROC-AUC, Brier score, test precision, and test recall for all twelve evaluated models. XGBoost is the best individual baseline, and the proposed reliability-aware temporal GNN is marked (Ours)." /></div>
+              <div className="complete-metrics-scroll"><img src="/heldout_metrics.png" alt="Five aligned dot plots compare average precision, ROC-AUC, Brier score, test precision, and test recall for all twelve evaluated models. XGBoost is the best individual baseline, Delta (GCN plus LSTM) is marked as the proposed model, and the reliability-aware temporal GNN remains a comparison." /></div>
+            </div>
+            <div className="complete-metrics ranking-curves">
+              <h3>Precision–recall and ROC curves</h3>
+              <p>Held-out 2019–2021 curves from saved test predictions. The dashed precision–recall reference marks test prevalence.</p>
+              <div className="ranking-curves-image"><img src="/ranking_curves.png" alt="Precision-recall and ROC curves for XGBoost, LightGBM, LSTM, Delta GCN plus LSTM, GraphSAGE plus LSTM, and the reliability-aware temporal GNN comparison on the held-out test predictions. The precision-recall panel includes a dashed test-prevalence line." /></div>
             </div>
             <div className="result-callout"><div><span>BEST INDIVIDUAL BASELINE</span><strong>XGBoost</strong></div><p>AP 0.1141 · ROC-AUC 0.8868</p></div>
-            <div className="result-callout result-callout-ours"><div><span>PROPOSED MODEL · OURS</span><strong>Reliability-aware temporal GNN</strong></div><p>AP 0.0383 · ROC-AUC 0.7515</p></div>
-            <p className="result-interpretation">LightGBM–GraphSAGE has the highest AP estimate, but its confidence interval includes zero and its ROC-AUC is lower. Adding our model to XGBoost does not improve either metric.</p>
+            <div className="result-callout result-callout-ours"><div><span>PROPOSED MODEL · OURS</span><strong>Delta (GCN + LSTM)</strong></div><p>AP 0.0794 · ROC-AUC 0.7708</p></div>
+            <p className="result-interpretation">LightGBM–GraphSAGE has the highest AP estimate, but its confidence interval includes zero and its ROC-AUC is lower. Delta's AP exceeds the LSTM's, while its ROC-AUC is slightly lower.</p>
             <MetricsTable />
             <div className="external-benchmark"><span>SEPARATE PUBLISHED RESULT</span><p>Alanis et al. report ROC-AUC 0.92 for XGBoost on a different cohort and protocol. It is context, not a matched comparison.</p></div>
           </section>

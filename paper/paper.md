@@ -1,6 +1,6 @@
 # Manuscript summary
 
-The IEEE conference manuscript is available in [`main.tex`](main.tex) and [`main.pdf`](main.pdf). It evaluates financial-peer temporal graph models against boosted-tree and neural baselines on a SEC-derived bankruptcy panel.
+The IEEE conference manuscript is available in [`main.tex`](main.tex) and [`main.pdf`](main.pdf). It proposes Delta, a GCN+LSTM model, and compares it with boosted-tree, temporal, graph, and score-fusion baselines on an SEC-derived bankruptcy panel.
 
 ## Test results
 
@@ -8,9 +8,16 @@ The IEEE conference manuscript is available in [`main.tex`](main.tex) and [`main
 |---|---:|---:|
 | XGBoost | 0.1141 | 0.8868 |
 | LightGBM | 0.1116 | 0.8790 |
+| Logistic regression | 0.0504 | 0.8325 |
+| Histogram gradient boosting | 0.0546 | 0.8028 |
+| MLP | 0.0589 | 0.8154 |
+| LSTM | 0.0708 | 0.7740 |
+| (Ours) Delta (GCN + LSTM) | 0.0794 | 0.7708 |
+| GraphSAGE + LSTM | 0.0698 | 0.7649 |
 | Reliability-aware temporal GNN | 0.0383 | 0.7515 |
-| XGBoost with reliability-GNN score fusion | 0.1133 | 0.8806 |
-| LightGBM with GraphSAGE score fusion | 0.1181 | 0.8705 |
+| LightGBM + GraphSAGE fusion | 0.1181 | 0.8705 |
+| LightGBM + reliability-GNN fusion | 0.1127 | 0.8688 |
+| XGBoost + reliability-GNN fusion | 0.1133 | 0.8806 |
 
 The LightGBM and XGBoost fusion weights were selected on validation data. The paired company-clustered 95% interval for the LightGBM-GraphSAGE AP difference is [-0.00285, 0.01913]. For XGBoost-reliability-GNN fusion, the AP interval is [-0.01363, 0.01493] and the ROC-AUC difference is -0.00626 with interval [-0.01558, -0.00037].
 

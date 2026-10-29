@@ -34,7 +34,7 @@ def main() -> int:
         ("Histogram gradient boosting, last year", neural["models"]["hist_gradient_boosting_last_year"]),
         ("MLP, flattened five-year history", neural["models"]["mlp_flattened_history"]),
         ("LSTM", neural["models"]["lstm"]),
-        ("GCN + LSTM", neural["models"]["gcn"]),
+        ("Delta (GCN + LSTM, proposed)", neural["models"]["gcn"]),
         ("GraphSAGE + LSTM", neural["models"]["graphsage"]),
         ("Reliability-aware temporal GNN", neural["models"]["reliability_temporal_gnn"]),
     ]
@@ -54,11 +54,19 @@ def main() -> int:
         r"\caption{Held-out fiscal-year test results (2019--2021, $n=9{,}032$, 64 positives). Operating thresholds target 80\% recall on validation; final columns show test precision and recall.}",
         r"\label{tab:main}", r"\footnotesize",
         r"\begin{tabular}{lrrrrr}", r"\toprule",
-        r"Model & AP $\uparrow$ & ROC-AUC $\uparrow$ & Brier $\downarrow$ & Precision (val 80\%R) & Test recall \\",
+        r"Model & AP $\uparrow$ & ROC-AUC $\uparrow$ & Brier $\downarrow$ & Test precision & Test recall \\",
         r"\midrule",
     ]
     for name, ap, auc, brier, precision, recall in rows:
-        lines.append(f"{name} & {fmt(ap)} & {fmt(auc)} & {fmt(brier)} & {fmt(precision)} & {fmt(recall)} " + r"\\")
+        if name == "XGBoost, validation-tuned":
+            display_name = r"\textbf{XGBoost (best individual baseline)}"
+        elif name == "Delta (GCN + LSTM, proposed)":
+            display_name = r"\textbf{(Ours) Delta (GCN + LSTM)}"
+        elif name == "LightGBM + GraphSAGE score fusion":
+            display_name = r"\textbf{LightGBM + GraphSAGE fusion (highest AP)}"
+        else:
+            display_name = name
+        lines.append(f"{display_name} & {fmt(ap)} & {fmt(auc)} & {fmt(brier)} & {fmt(precision)} & {fmt(recall)} " + r"\\")
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
     (ROOT / "paper/results_table.tex").write_text("\n".join(lines) + "\n")
 

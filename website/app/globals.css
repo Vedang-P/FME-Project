@@ -157,6 +157,9 @@ h2 { margin-bottom: 0; font-family: var(--serif); font-size: clamp(30px, 3.6vw, 
 .complete-metrics > p { margin: 0 0 12px; color: #4f5b55; font-size: 12px; line-height: 1.6; }
 .complete-metrics-scroll { overflow-x: auto; border: 1px solid var(--line); background: #fff; }
 .complete-metrics-scroll img { display: block; width: 100%; min-width: 1040px; height: auto; }
+.ranking-curves { margin-top: 28px; }
+.ranking-curves-image { overflow-x: auto; border: 1px solid var(--line); background: #fff; }
+.ranking-curves-image img { display: block; width: 100%; min-width: 720px; height: auto; }
 .result-callout { display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: center; border-top: 1px solid var(--line); padding: 14px 0; }
 .result-callout > div { display: flex; gap: 17px; align-items: baseline; }
 .result-callout span,.external-benchmark span { font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: #46554d; }
@@ -241,6 +244,7 @@ tbody .row-ours { background: #f4eae4; color: #733a27; }
   .chart-wrap { overflow-x: auto; margin-inline: -8px; padding-inline: 8px; }
   .results-chart { min-width: 690px; }
   .complete-metrics-scroll img { min-width: 1040px; }
+  .ranking-curves-image img { min-width: 720px; }
   .result-callout { grid-template-columns: 1fr; gap: 5px; }
   .result-callout > div { flex-wrap: wrap; gap: 7px 12px; }
   .result-callout strong { font-size: 19px; }

@@ -8,7 +8,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import PrecisionRecallDisplay, RocCurveDisplay, average_precision_score, roc_auc_score
+from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score, roc_curve
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,9 +22,10 @@ COLORS = {
     "Histogram gradient boosting, last year": "#ad7e2c",
     "MLP, flattened five-year history": "#92978f",
     "LSTM": "#3e806e",
-    "GCN + LSTM": "#408c84",
+    "GCN + LSTM": "#a14d35",
+    "Delta (GCN + LSTM, proposed)": "#a14d35",
     "GraphSAGE + LSTM": "#74a99d",
-    "(Ours) Reliability-aware temporal GNN": "#a14d35",
+    "Reliability-aware temporal GNN": "#8b6f9f",
     "LightGBM + GraphSAGE fusion (highest AP)": "#d3813f",
     "LightGBM + reliability-aware GNN fusion": "#9a6f8c",
     "XGBoost + reliability-aware GNN fusion": "#536c9b",
@@ -47,9 +48,9 @@ ROWS = [
     ("Histogram gradient boosting, last year", LEDGER["models"]["hist_gradient_boosting_last_year"]),
     ("MLP, flattened five-year history", LEDGER["models"]["mlp_flattened_history"]),
     ("LSTM", LEDGER["models"]["lstm"]),
-    ("GCN + LSTM", LEDGER["models"]["gcn"]),
+    ("Delta (GCN + LSTM, proposed)", LEDGER["models"]["gcn"]),
     ("GraphSAGE + LSTM", LEDGER["models"]["graphsage"]),
-    ("(Ours) Reliability-aware temporal GNN", LEDGER["models"]["reliability_temporal_gnn"]),
+    ("Reliability-aware temporal GNN", LEDGER["models"]["reliability_temporal_gnn"]),
     ("LightGBM + GraphSAGE fusion (highest AP)", fusion_row(LEDGER["score_fusion_lightgbm"]["graphsage"])),
     ("LightGBM + reliability-aware GNN fusion", fusion_row(LEDGER["score_fusion_lightgbm"]["reliability_temporal_gnn"])),
     ("XGBoost + reliability-aware GNN fusion", fusion_row(LEDGER["score_fusion_xgboost"]["xgboost__reliability_temporal_gnn"])),
@@ -94,7 +95,7 @@ def metric_summary() -> None:
     axes[0].set_yticklabels(labels, fontsize=7.6)
     axes[0].tick_params(axis="y", pad=7)
     axes[0].get_yticklabels()[0].set_fontweight("bold")
-    axes[0].get_yticklabels()[8].set_fontweight("bold")
+    axes[0].get_yticklabels()[6].set_fontweight("bold")
     axes[0].get_yticklabels()[9].set_fontweight("bold")
     axes[0].set_ylim(len(ROWS) - 0.35, -0.65)
     fig.suptitle("Held-out performance across the complete results table", x=0.205, y=0.985, ha="left", fontsize=12, weight="bold", color="#1c2a34")
@@ -110,8 +111,9 @@ def load_curve_scores() -> dict[str, tuple[np.ndarray, np.ndarray]]:
     neural = pd.read_csv(neural_path)
     column_map = {
         "LSTM": "lstm",
-        "GCN + LSTM": "gcn",
-        "(Ours) Reliability-aware temporal GNN": "reliability_temporal_gnn",
+        "Delta (GCN + LSTM, proposed)": "gcn",
+        "Reliability-aware temporal GNN": "reliability_temporal_gnn",
+        "GraphSAGE + LSTM": "graphsage",
     }
     for label, model in column_map.items():
         rows = neural.loc[neural["model"] == model].sort_values(["company_id", "year"])
@@ -130,7 +132,7 @@ def ranking_curves() -> None:
     scores = load_curve_scores()
     fig, axes = plt.subplots(1, 2, figsize=(7.1, 3.05))
     for label, (truth, prediction) in scores.items():
-        expected = LEDGER["models"].get({"LSTM": "lstm", "GCN + LSTM": "gcn", "(Ours) Reliability-aware temporal GNN": "reliability_temporal_gnn"}.get(label, ""), None)
+        expected = LEDGER["models"].get({"LSTM": "lstm", "Delta (GCN + LSTM, proposed)": "gcn", "Reliability-aware temporal GNN": "reliability_temporal_gnn", "GraphSAGE + LSTM": "graphsage"}.get(label, ""), None)
         if label == "XGBoost, validation-tuned":
             expected = LEDGER["xgboost"]["test_metrics"]
         elif label == "LightGBM, validation-tuned":
@@ -140,10 +142,12 @@ def ranking_curves() -> None:
         short = {
             "XGBoost, validation-tuned": "XGBoost",
             "LightGBM, validation-tuned": "LightGBM",
-            "(Ours) Reliability-aware temporal GNN": "(Ours) reliability GNN",
+            "Delta (GCN + LSTM, proposed)": "Delta (GCN + LSTM)",
         }.get(label, label)
-        PrecisionRecallDisplay.from_predictions(truth, prediction, name=short, ax=axes[0], color=COLORS[label], plot_chance_level=False)
-        RocCurveDisplay.from_predictions(truth, prediction, name=short, ax=axes[1], color=COLORS[label])
+        precision, recall, _ = precision_recall_curve(truth, prediction)
+        false_positive_rate, true_positive_rate, _ = roc_curve(truth, prediction)
+        axes[0].plot(recall, precision, label=short, color=COLORS[label], linewidth=1.35)
+        axes[1].plot(false_positive_rate, true_positive_rate, label=short, color=COLORS[label], linewidth=1.35)
     prevalence = 64 / 9032
     axes[0].axhline(prevalence, color="#92999a", linestyle="--", linewidth=0.9, label=f"Prevalence ({prevalence:.3f})")
     axes[0].set_title("Precision–recall", loc="left", weight="semibold")
@@ -175,9 +179,8 @@ def method_diagram() -> None:
     boxes = [
         (0.25, 1.45, 2.2, 1.15, "Firm history", "Up to five annual\nfinancial vectors", "#e8efe9", "#3e806e"),
         (3.0, 1.45, 2.05, 1.15, "LSTM encoder", "Firm state at year t", "#e8efe9", "#3e806e"),
-        (5.65, 2.45, 2.25, 1.05, "Peer graphs", "Liquidity · solvency\nprofitability / cash flow", "#e9edf1", "#287b8e"),
-        (5.65, 0.5, 2.25, 1.05, "Reliability", "Similarity × peer-set\npersistence", "#f3eae5", "#ad654e"),
-        (8.55, 1.45, 1.7, 1.15, "Gated messages", "Relation-specific\naggregation", "#eee9f3", "#7651a1"),
+        (5.65, 2.85, 2.25, 0.9, "Peer graph at year t", "Financial-similarity links", "#e9edf1", "#287b8e"),
+        (5.65, 1.15, 2.25, 1.15, "GCN aggregation", "Self state + weighted\npeer-state mean", "#eee9f3", "#7651a1"),
         (10.75, 1.45, 1.05, 1.15, "Score", "Distress\nrisk", "#f1e9e7", "#b23a32"),
     ]
     centers = {}
@@ -194,14 +197,10 @@ def method_diagram() -> None:
         end = (X, Y + H / 2) if X > x else (X + W / 2, Y + H)
         ax.add_patch(FancyArrowPatch(start, end, arrowstyle="-|>", mutation_scale=10, color=color, linewidth=1.1, connectionstyle=f"arc3,rad={rad}"))
     arrow("Firm history", "LSTM encoder")
-    arrow("LSTM encoder", "Gated messages")
-    # Edge points are explicit here to keep the two graph inputs legible.
-    ax.add_patch(FancyArrowPatch((7.9, 2.95), (8.55, 2.25), arrowstyle="-|>", mutation_scale=10, color="#287b8e", linewidth=1.1, connectionstyle="arc3,rad=0.0"))
-    ax.add_patch(FancyArrowPatch((6.78, 2.45), (6.78, 1.55), arrowstyle="-|>", mutation_scale=10, color="#ad654e", linewidth=1.1))
-    ax.add_patch(FancyArrowPatch((7.9, 1.02), (8.55, 1.65), arrowstyle="-|>", mutation_scale=10, color="#ad654e", linewidth=1.1, connectionstyle="arc3,rad=0.0"))
-    arrow("Gated messages", "Score", "#7651a1")
-    ax.text(6.77, 3.75, "Snapshots at prediction year t", ha="center", fontsize=7.4, color="#57636a")
-    ax.text(6.77, 0.18, "Similarity links are predictive associations, not causal or contagion edges.", ha="center", fontsize=7.2, color="#57636a")
+    arrow("LSTM encoder", "GCN aggregation")
+    ax.add_patch(FancyArrowPatch((6.78, 2.85), (6.78, 2.30), arrowstyle="-|>", mutation_scale=10, color="#287b8e", linewidth=1.1))
+    arrow("GCN aggregation", "Score", "#7651a1")
+    ax.text(6.77, 0.53, "Peer links are predictive associations, not causal or contagion edges.", ha="center", fontsize=7.2, color="#57636a")
     fig.tight_layout(pad=0.4)
     export(fig, "method_overview")
 

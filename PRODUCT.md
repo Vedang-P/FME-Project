@@ -20,7 +20,7 @@ Explain the corporate bankruptcy prediction study section by section and make it
 
 ## Positioning
 
-The site presents a reliability-aware temporal GNN study alongside its measured comparisons with XGBoost and LightGBM. It distinguishes local results from published results on other datasets.
+The site presents Delta, a GCN+LSTM model, alongside all measured tabular, neural, graph, and score-fusion comparisons. The reliability-aware temporal GNN remains a comparison model. The site distinguishes local results from published results on other datasets.
 
 ## Operating Context
 
@@ -58,7 +58,7 @@ The site accompanies the IEEE-format manuscript in `paper/main.pdf` and the publ
 
 **STORY:** Readers first see the question and the measured outcome, then move through the data, model, evaluation, results, and limitations. Visuals map the 2008–2021 year split, the LSTM and financial-peer flow, and the local model scores. Published figures on another cohort have their own labeled comparison.
 
-**FIRST VIEWPORT:** A compact atlas masthead spans the top, a narrow contents legend anchors the left on desktop, and the main column opens with the paper title, one-sentence question, concise abstract, and an evidence plot with XGBoost, LightGBM, and temporal GNN values. The primary action opens the IEEE PDF.
+**FIRST VIEWPORT:** A compact atlas masthead spans the top, a narrow contents legend anchors the left on desktop, and the main column opens with the research question, a concise summary, and an evidence plot with XGBoost, LightGBM, and Delta (GCN+LSTM). The primary action opens the IEEE PDF.
 
 **FORM:** Own-ranked candidate 1, Economic Atlas, selected by the user. Seed reference: `seed:0872e4be207844a8`.
 
